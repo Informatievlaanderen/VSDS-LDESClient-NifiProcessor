@@ -53,7 +53,7 @@ import java.util.stream.StreamSupport;
 @SeeAlso({})
 @ReadsAttributes({@ReadsAttribute(attribute = "", description = "")})
 @WritesAttributes({@WritesAttribute(attribute = "", description = "")})
-public class RetrieveLDESSourceProcessor extends AbstractProcessor {
+public class ReplicateLdesStream extends AbstractProcessor {
 
     public static final PropertyDescriptor API_URL = new PropertyDescriptor
             .Builder().name("API_URL")
@@ -155,7 +155,7 @@ public class RetrieveLDESSourceProcessor extends AbstractProcessor {
     private String retrieveLDESFromSource(String url) {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             HttpGet httpGet = new HttpGet(url);
-            getLogger().info("url {}", url);
+            getLogger().trace("url {}", url);
 
             HttpResponse response = httpClient.execute(httpGet);
             HttpEntity httpEntity = response.getEntity();

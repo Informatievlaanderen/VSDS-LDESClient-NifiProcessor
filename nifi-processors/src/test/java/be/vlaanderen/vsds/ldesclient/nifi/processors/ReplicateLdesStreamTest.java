@@ -21,14 +21,16 @@ import org.apache.nifi.util.TestRunners;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RetrieveLDESSourceProcessorTest {
+
+public class ReplicateLdesStreamTest {
 
     private TestRunner testRunner;
 
     @Before
     public void init() {
-        testRunner = TestRunners.newTestRunner(RetrieveLDESSourceProcessor.class);
+        testRunner = TestRunners.newTestRunner(ReplicateLdesStream.class);
     }
 
     @Test
@@ -37,6 +39,8 @@ public class RetrieveLDESSourceProcessorTest {
         testRunner.setProperty("POLLING_INTERVAL", "60");
 
         testRunner.run(2);
+
+        assertEquals(testRunner.getFlowFilesForRelationship("success").size(), 2);
     }
 
 }
