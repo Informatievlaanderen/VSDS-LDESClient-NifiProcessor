@@ -35,8 +35,8 @@ public class ReplicateLdesStreamTest {
 
     @Test
     public void testProcessor() {
-        testRunner.setProperty("API_URL", "https://test-ldes-api.azurewebsites.net/api/v1/ldes/mobility-hindrances");
-        testRunner.setProperty("POLLING_INTERVAL", "60");
+        testRunner.setProperty("DATASOURCE_URL", "https://test-ldes-api.azurewebsites.net/api/v1/ldes/mobility-hindrances");
+        testRunner.setProperty("TREE_DIRECTION", "tree:GreaterThanRelation");
 
         testRunner.run(2);
 

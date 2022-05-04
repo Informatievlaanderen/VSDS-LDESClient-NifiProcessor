@@ -28,10 +28,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.nifi.annotation.behavior.ReadsAttribute;
-import org.apache.nifi.annotation.behavior.ReadsAttributes;
-import org.apache.nifi.annotation.behavior.WritesAttribute;
-import org.apache.nifi.annotation.behavior.WritesAttributes;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.SeeAlso;
 import org.apache.nifi.annotation.documentation.Tags;
@@ -40,7 +36,6 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
 import org.apache.nifi.processor.*;
-import org.apache.nifi.processor.util.StandardValidators;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -48,68 +43,36 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
+import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.DATASOURCE_URL;
+import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.TREE_DIRECTION;
+import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorRelationships.SUCCESS_RELATIONSHIP;
+
 @Tags({"ldes-client, vsds"})
-@CapabilityDescription("Provide a description")
+@CapabilityDescription("Takes in an LDES source and passes it through")
 @SeeAlso({})
-@ReadsAttributes({@ReadsAttribute(attribute = "", description = "")})
-@WritesAttributes({@WritesAttribute(attribute = "", description = "")})
 public class ReplicateLdesStream extends AbstractProcessor {
-
-    public static final PropertyDescriptor API_URL = new PropertyDescriptor
-            .Builder().name("API_URL")
-            .displayName("Url to data source api")
-            .description("Example Property")
-            .required(true)
-            .addValidator(StandardValidators.URL_VALIDATOR)
-            .build();
-    public static final PropertyDescriptor POLLING_INTERVAL = new PropertyDescriptor
-            .Builder().name("POLLING_INTERVAL")
-            .displayName("Polling interval")
-            .description("Interval how often the API will be consulted. To be defined in milliseconds")
-            .required(true)
-            .addValidator(StandardValidators.POSITIVE_INTEGER_VALIDATOR)
-            .build();
-
-    public static final Relationship SUCCESS_RELATIONSHIP = new Relationship.Builder()
-            .name("success")
-            .description("Successfully retrieved items")
-            .build();
-
-    private List<PropertyDescriptor> descriptors;
-
-    private Set<Relationship> relationships;
 
     private String nextUrl;
     private String lastProcessedId;
+    private String treeDirection;
 
     private ObjectMapper objectMapper;
     Gson gson;
 
     @Override
-    protected void init(final ProcessorInitializationContext context) {
-        descriptors = new ArrayList<>();
-        descriptors.add(API_URL);
-        descriptors.add(POLLING_INTERVAL);
-        descriptors = Collections.unmodifiableList(descriptors);
-
-        relationships = new HashSet<>();
-        relationships.add(SUCCESS_RELATIONSHIP);
-        relationships = Collections.unmodifiableSet(relationships);
-    }
-
-    @Override
     public Set<Relationship> getRelationships() {
-        return this.relationships;
+        return Set.of(SUCCESS_RELATIONSHIP);
     }
 
     @Override
     public final List<PropertyDescriptor> getSupportedPropertyDescriptors() {
-        return descriptors;
+        return List.of(DATASOURCE_URL, TREE_DIRECTION);
     }
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        nextUrl = context.getProperty(API_URL).getValue();
+        nextUrl = context.getProperty(DATASOURCE_URL).getValue();
+        treeDirection = context.getProperty(TREE_DIRECTION).getValue();
         lastProcessedId = "";
 
         objectMapper = new ObjectMapper();
@@ -120,8 +83,7 @@ public class ReplicateLdesStream extends AbstractProcessor {
     public void onTrigger(final ProcessContext context, final ProcessSession session) {
         Map<String, String> metricAttributes = new HashMap<>();
         String jsonResponse = retrieveLDESFromSource(nextUrl);
-        updateVariables(jsonResponse, metricAttributes);
-
+        updateVariables(jsonResponse, metricAttributes, treeDirection);
 
         if ((!lastProcessedId.equals(metricAttributes.get("filename"))) && jsonResponse != null) {
             FlowFile flowFile = session.create();
@@ -140,14 +102,14 @@ public class ReplicateLdesStream extends AbstractProcessor {
         }
     }
 
-    private void updateVariables(String jsonResponse, Map<String, String> metricAttributes) {
+    private void updateVariables(String jsonResponse, Map<String, String> metricAttributes, String treeDirection) {
         JsonObject map = gson.fromJson(jsonResponse, JsonObject.class);
         metricAttributes.put("filename", map.get("@id").toString());
 
         JsonArray treeRelations = gson.fromJson(map.get("tree:relation").toString(), JsonArray.class);
         StreamSupport.stream(treeRelations.spliterator(), false)
                 .map(JsonElement::getAsJsonObject)
-                .filter(x -> Objects.equals(x.get("@type").getAsString(), "tree:GreaterThanRelation"))
+                .filter(x -> Objects.equals(x.get("@type").getAsString(), treeDirection))
                 .findFirst()
                 .ifPresent(jsonObject -> nextUrl = jsonObject.get("tree:node").getAsString());
     }
