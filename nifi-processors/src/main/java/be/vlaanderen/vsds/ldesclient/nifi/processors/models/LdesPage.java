@@ -1,4 +1,4 @@
-package be.vlaanderen.vsds.ldesclient.nifi.processors.util;
+package be.vlaanderen.vsds.ldesclient.nifi.processors.models;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -17,6 +17,10 @@ public class LdesPage {
     public LdesPage(JsonObject ldesPage, Gson gson) {
         this.ldesPage = ldesPage;
         this.gson = gson;
+    }
+
+    public String getPage() {
+        return gson.toJson(ldesPage);
     }
 
     public JsonArray getLdesItems() {

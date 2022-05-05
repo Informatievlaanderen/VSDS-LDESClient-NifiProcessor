@@ -1,5 +1,6 @@
 package be.vlaanderen.vsds.ldesclient.nifi.processors.config;
 
+import be.vlaanderen.vsds.ldesclient.nifi.processors.models.TreeDirection;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.processor.util.StandardValidators;
 

@@ -1,6 +1,7 @@
-package be.vlaanderen.vsds.ldesclient.nifi.processors.util;
+package be.vlaanderen.vsds.ldesclient.nifi.processors.services;
 
-import be.vlaanderen.vsds.ldesclient.nifi.processors.config.TreeDirection;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.models.LdesPage;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.models.TreeDirection;
 
 import java.util.*;
 

@@ -16,32 +16,25 @@
  */
 package be.vlaanderen.vsds.ldesclient.nifi.processors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.jsonldjava.utils.JsonUtils;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.rest.clients.LdesInputRestClient;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.services.FlowManager;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.models.LdesPage;
+import be.vlaanderen.vsds.ldesclient.nifi.processors.services.StateManager;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.SeeAlso;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.flowfile.attributes.CoreAttributes;
-import org.apache.nifi.processor.*;
+import org.apache.nifi.processor.AbstractProcessor;
+import org.apache.nifi.processor.ProcessContext;
+import org.apache.nifi.processor.ProcessSession;
+import org.apache.nifi.processor.Relationship;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.stream.StreamSupport;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.DATASOURCE_URL;
 import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.TREE_DIRECTION;
@@ -52,12 +45,12 @@ import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessor
 @SeeAlso({LdesClient.class})
 public class ReplicateLdesStream extends AbstractProcessor {
 
-    private String nextUrl;
     private String lastProcessedId;
-    private String treeDirection;
 
-    private ObjectMapper objectMapper;
-    Gson gson;
+    private StateManager stateManager;
+    private LdesInputRestClient ldesInputRestClient;
+
+    private final Gson gson = new Gson();
 
     @Override
     public Set<Relationship> getRelationships() {
@@ -71,61 +64,27 @@ public class ReplicateLdesStream extends AbstractProcessor {
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        nextUrl = context.getProperty(DATASOURCE_URL).getValue();
-        treeDirection = "tree:" + context.getProperty(TREE_DIRECTION).getValue();
-        lastProcessedId = "";
-
-        objectMapper = new ObjectMapper();
-        gson = new Gson();
+        stateManager = new StateManager(context.getProperty(TREE_DIRECTION).getValue(), context.getProperty(DATASOURCE_URL).getValue());
+        ldesInputRestClient = new LdesInputRestClient(gson);
     }
 
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession session) {
-        Map<String, String> metricAttributes = new HashMap<>();
-        String jsonResponse = retrieveLDESFromSource(nextUrl);
-        updateVariables(jsonResponse, metricAttributes, treeDirection);
-
-        if ((!lastProcessedId.equals(metricAttributes.get("filename"))) && jsonResponse != null) {
-            FlowFile flowFile = session.create();
-            flowFile = session.write(flowFile, (rawIn, rawOut) -> {
-                try (OutputStream out = new BufferedOutputStream(rawOut)) {
-                    Object jsonObject = JsonUtils.fromString(jsonResponse);
-
-                    out.write(objectMapper.writeValueAsBytes(jsonObject));
-                }
-            });
-
-            flowFile = session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), "application/json");
-            session.putAllAttributes(flowFile, metricAttributes);
-            session.transfer(flowFile, SUCCESS_RELATIONSHIP);
-            lastProcessedId = metricAttributes.get("filename");
+        if (Objects.equals(lastProcessedId, stateManager.getNextPageToProcess())) {
+            return;
         }
-    }
+        FlowManager flowManager = new FlowManager(session);
 
-    private void updateVariables(String jsonResponse, Map<String, String> metricAttributes, String treeDirection) {
-        JsonObject map = gson.fromJson(jsonResponse, JsonObject.class);
-        metricAttributes.put("filename", map.get("@id").toString());
-
-        JsonArray treeRelations = gson.fromJson(map.get("tree:relation").toString(), JsonArray.class);
-        StreamSupport.stream(treeRelations.spliterator(), false)
-                .map(JsonElement::getAsJsonObject)
-                .filter(x -> Objects.equals(x.get("@type").getAsString(), treeDirection))
-                .findFirst()
-                .ifPresent(jsonObject -> nextUrl = jsonObject.get("tree:node").getAsString());
-    }
-
-    private String retrieveLDESFromSource(String url) {
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            HttpGet httpGet = new HttpGet(url);
-            getLogger().trace("url {}", url);
-
-            HttpResponse response = httpClient.execute(httpGet);
-            HttpEntity httpEntity = response.getEntity();
-
-            return EntityUtils.toString(httpEntity);
-        } catch (IOException e) {
-            throw new RuntimeException();
+        JsonObject ldesInput = ldesInputRestClient.retrieveLdesInput(stateManager.getNextPageToProcess());
+        if (ldesInput == null) {
+            return;
         }
 
+        LdesPage ldesPage = new LdesPage(ldesInput, gson);
+
+        flowManager.sendJsonStringToRelationship(ldesPage.getPage(), SUCCESS_RELATIONSHIP);
+
+        lastProcessedId = ldesPage.getPageId();
+        stateManager.lookupNextPageToProcess(ldesPage);
     }
 }
