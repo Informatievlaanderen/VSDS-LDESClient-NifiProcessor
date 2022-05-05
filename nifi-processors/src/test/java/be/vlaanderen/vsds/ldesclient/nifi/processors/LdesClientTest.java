@@ -24,17 +24,16 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class ReplicateLdesStreamTest {
+public class LdesClientTest {
 
     private TestRunner testRunner;
 
     @Before
     public void init() {
-        testRunner = TestRunners.newTestRunner(ReplicateLdesStream.class);
+        testRunner = TestRunners.newTestRunner(LdesClient.class);
     }
 
     @Rule
@@ -52,7 +51,8 @@ public class ReplicateLdesStreamTest {
 
         testRunner.run(2);
 
-        assertEquals(2, testRunner.getFlowFilesForRelationship("success").size());
+        assertEquals(testRunner.getFlowFilesForRelationship("metadata").size(), 2);
+        assertEquals(testRunner.getFlowFilesForRelationship("data").size(), 4);
     }
 
 }

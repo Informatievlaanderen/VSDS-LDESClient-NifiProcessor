@@ -49,7 +49,7 @@ import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessor
 
 @Tags({"ldes-client, vsds"})
 @CapabilityDescription("Takes in an LDES source and passes it through")
-@SeeAlso({})
+@SeeAlso({LdesClient.class})
 public class ReplicateLdesStream extends AbstractProcessor {
 
     private String nextUrl;
@@ -72,7 +72,7 @@ public class ReplicateLdesStream extends AbstractProcessor {
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
         nextUrl = context.getProperty(DATASOURCE_URL).getValue();
-        treeDirection = context.getProperty(TREE_DIRECTION).getValue();
+        treeDirection = "tree:" + context.getProperty(TREE_DIRECTION).getValue();
         lastProcessedId = "";
 
         objectMapper = new ObjectMapper();

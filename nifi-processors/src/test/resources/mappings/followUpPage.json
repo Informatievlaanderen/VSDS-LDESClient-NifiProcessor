@@ -1,0 +1,51 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "@context": [
+        "https://www.example.com/context.jsonld"
+      ],
+      "@id": "http://localhost:8089/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z",
+      "@type": "Node",
+      "viewOf": "http://localhost:8089/exampleData",
+      "collectionInfo": {
+        "@id": "http://localhost:8089/exampleData",
+        "@type": "EventStream",
+        "shape": "localhost:8089/exampleData/shape",
+        "timestampPath": "prov:generatedAtTime",
+        "versionOfPath": "dct:isVersionOf"
+      },
+      "tree:relation": [
+        {
+          "tree:node": "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z",
+          "@type": "tree:LessThanRelation",
+          "tree:path": "prov:generatedAtTime",
+          "tree:value": "2022-05-04T00:00:00.000Z"
+        },
+        {
+          "tree:node": "http://localhost:8089/exampleData?generatedAtTime=2022-05-06T00:00:00.000Z",
+          "@type": "tree:GreaterThanRelation",
+          "tree:path": "prov:generatedAtTime",
+          "tree:value": "2022-05-06T00:00:00.000Z"
+        }
+      ],
+      "items": [
+        {
+          "@id": "thirdId",
+          "description": "Bananas"
+        },
+        {
+          "@id": "fourthId",
+          "description": "Pineapples"
+        }
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/ld+json"
+    }
+  }
+}
