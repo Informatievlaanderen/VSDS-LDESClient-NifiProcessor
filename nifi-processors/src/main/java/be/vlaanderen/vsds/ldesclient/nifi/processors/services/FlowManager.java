@@ -7,38 +7,30 @@ import org.apache.nifi.flowfile.attributes.CoreAttributes;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
 
-import java.io.BufferedOutputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.Arrays;
 import java.util.Map;
 
 public class FlowManager {
     ProcessSession session;
-    private final ObjectMapper objectMapper;
 
     public FlowManager(ProcessSession session) {
         this.session = session;
-        objectMapper = new ObjectMapper();
     }
 
-    public FlowFile writeJsonToFlowFile(String ldesMetadata) {
+    public void sendTriplesToRelation(String[] tripples, Relationship relationship) {
+        sendTriplesToRelation(tripples, relationship, Map.of());
+    }
+
+    public void sendTriplesToRelation(String[] tripples, Relationship relationship, Map<String, String> attributes) {
         FlowFile flowFile = session.create();
         flowFile = session.write(flowFile, (rawIn, rawOut) -> {
-            try (OutputStream out = new BufferedOutputStream(rawOut)) {
-                out.write(objectMapper.writeValueAsBytes(JsonUtils.fromString(ldesMetadata)));
+            try (PrintWriter out = new PrintWriter(rawOut)) {
+                Arrays.stream(tripples).forEach(out::println);
             }
         });
 
-        return session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), "application/json");
-    }
-
-    public void sendJsonStringToRelationship(String jsonString, Relationship relationship) {
-        sendJsonStringToRelationship(jsonString, relationship, Map.of());
-    }
-
-    public void sendJsonStringToRelationship(String jsonString, Relationship relationship, Map<String, String> attributes) {
-        FlowFile flowFile = writeJsonToFlowFile(jsonString);
-        flowFile = session.putAllAttributes(flowFile, attributes);
-
+        flowFile = session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), "application/n-quads");
         session.transfer(flowFile, relationship);
     }
 }

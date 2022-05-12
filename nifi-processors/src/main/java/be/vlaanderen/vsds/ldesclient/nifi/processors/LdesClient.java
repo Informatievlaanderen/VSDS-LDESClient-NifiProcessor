@@ -1,39 +1,41 @@
 package be.vlaanderen.vsds.ldesclient.nifi.processors;
 
-import be.vlaanderen.vsds.ldesclient.nifi.processors.rest.clients.LdesInputRestClient;
 import be.vlaanderen.vsds.ldesclient.nifi.processors.services.FlowManager;
-import be.vlaanderen.vsds.ldesclient.nifi.processors.models.LdesPage;
 import be.vlaanderen.vsds.ldesclient.nifi.processors.services.StateManager;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFParser;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
-import org.apache.nifi.annotation.documentation.SeeAlso;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
-import org.apache.nifi.processor.*;
+import org.apache.nifi.processor.AbstractProcessor;
+import org.apache.nifi.processor.ProcessContext;
+import org.apache.nifi.processor.ProcessSession;
+import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 
-import java.util.*;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Set;
 
 import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.DATASOURCE_URL;
 import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorProperties.TREE_DIRECTION;
-import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorRelationships.*;
+import static be.vlaanderen.vsds.ldesclient.nifi.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
 
 @Tags({"ldes-client, vsds"})
-@CapabilityDescription("Takes in an LDES source and passes its data and metadata through")
-@SeeAlso({ReplicateLdesStream.class})
+@CapabilityDescription("Takes in an LDES source and passes its individual LDES members")
 public class LdesClient extends AbstractProcessor {
     private StateManager stateManager;
     private FlowManager flowManager;
-    private LdesInputRestClient ldesInputRestClient;
-
-    private final Gson gson = new Gson();
 
     @Override
     public Set<Relationship> getRelationships() {
-        return Set.of(DATA_RELATIONSHIP, METADATA_RELATIONSHIP);
+        return Set.of(DATA_RELATIONSHIP);
     }
 
     @Override
@@ -44,37 +46,57 @@ public class LdesClient extends AbstractProcessor {
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
         stateManager = new StateManager(context.getProperty(TREE_DIRECTION).getValue(), context.getProperty(DATASOURCE_URL).getValue());
-        ldesInputRestClient = new LdesInputRestClient(gson);
     }
 
     @Override
     public void onTrigger(ProcessContext context, ProcessSession session) throws ProcessException {
         flowManager = new FlowManager(session);
-
-        JsonObject ldesInput = ldesInputRestClient.retrieveLdesInput(stateManager.getNextPageToProcess());
-        if(ldesInput == null) {
-            return;
+        if (stateManager.hasPagesToProcess()) {
+            processPage(stateManager.getNextPageToProcess());
         }
-
-        LdesPage ldesPage = new LdesPage(ldesInput, gson);
-
-        flowManager.sendJsonStringToRelationship(ldesPage.getLdesMetadata(), METADATA_RELATIONSHIP);
-
-        processLdesItems(ldesPage.getLdesItems());
-
-        stateManager.lookupNextPageToProcess(ldesPage);
     }
 
-    private void processLdesItems(JsonArray ldesItems) {
-        ldesItems.forEach(jsonElement -> {
-            String itemId = jsonElement.getAsJsonObject().get("@id").getAsString();
-            if (!stateManager.processItem(itemId)) {
-                return;
+    private void populateModel(Model model, Resource resource) {
+        resource.listProperties().forEach(statement -> {
+            if (statement.getObject().isLiteral()) {
+                model.add(statement);
+            } else {
+                populateModel(model, statement.getResource());
             }
-
-            Map<String, String> flowFileAttributes = Map.of("filename", itemId);
-            // Send to queue
-            flowManager.sendJsonStringToRelationship(gson.toJson(jsonElement.getAsJsonObject()), DATA_RELATIONSHIP, flowFileAttributes);
         });
+    }
+
+    private void processPage(String pageUrl) {
+        getLogger().info("Processing LDES Page %s".formatted(pageUrl));
+        Model model = ModelFactory.createDefaultModel();
+
+        RDFParser.source(pageUrl)
+                .forceLang(Lang.JSONLD11)
+                .parse(model);
+
+        // Data
+        StmtIterator iter = model.listStatements(null, model.createProperty("https://w3id.org/tree#", "member"), (String) null);
+
+        iter.forEach(statement -> {
+            if (stateManager.processMember(statement.getObject().toString())) {
+                Model outputModel = ModelFactory.createDefaultModel();
+                outputModel.add(statement);
+                populateModel(outputModel, statement.getResource());
+
+                StringWriter outputStream = new StringWriter();
+
+                RDFDataMgr.write(outputStream, outputModel, Lang.NTRIPLES);
+
+                flowManager.sendTriplesToRelation(outputStream.toString().split("\n"), DATA_RELATIONSHIP);
+            }
+        });
+
+        // Next Pages
+        model.listStatements(null, model.createProperty("https://w3id.org/tree#", "node"), (String) null)
+                .forEach(statement -> stateManager.addNewPageToProcess(statement.getObject().toString()));
+
+        if (!stateManager.hasPagesToProcess()) {
+            stateManager.setFullyReplayed(true);
+        }
     }
 }

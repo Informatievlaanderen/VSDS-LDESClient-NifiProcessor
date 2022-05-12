@@ -1,42 +1,66 @@
 package be.vlaanderen.vsds.ldesclient.nifi.processors.services;
 
-import be.vlaanderen.vsds.ldesclient.nifi.processors.models.LdesPage;
 import be.vlaanderen.vsds.ldesclient.nifi.processors.models.TreeDirection;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
 
 public class StateManager {
-    private String nextPageToProcess;
-    private final Set<String> processedItems;
-    private final TreeDirection treeDirection;
+    private final Queue<String> pagesToProcess;
+    protected final Set<String> processedPages;
+    protected final Set<String> processedItems;
+    private TreeDirection treeDirection;
     private boolean fullyReplayed;
 
-    public StateManager(String treeDirection, String initialPageToProcess) {
+    public StateManager(String initialPageToProcess) {
+        this.pagesToProcess = new ArrayDeque<>();
+        this.pagesToProcess.add(initialPageToProcess);
         this.processedItems = new HashSet<>();
+        this.processedPages = new HashSet<>();
+    }
+
+    public StateManager(String treeDirection, String initialPageToProcess) {
+        this.pagesToProcess = new ArrayDeque<>();
+        this.pagesToProcess.add(initialPageToProcess);
+        this.processedItems = new HashSet<>();
+        this.processedPages = new HashSet<>();
         this.treeDirection = TreeDirection.valueOf(treeDirection);
-        this.nextPageToProcess = initialPageToProcess;
     }
 
-    public boolean processItem(String item) {
-        return processedItems.add(item);
+    public boolean processMember(String member) {
+        return processedItems.add(member);
     }
 
+    public boolean hasPagesToProcess() {
+        return !pagesToProcess.isEmpty();
+    }
     public String getNextPageToProcess() {
-        return nextPageToProcess;
+        if(!hasPagesToProcess()) {
+            throw new RuntimeException("No more pages to process");
+        }
+
+        String pageUrl = pagesToProcess.poll();
+        processedPages.add(pageUrl);
+        return pageUrl;
+    }
+
+    public void addNewPageToProcess(String pageUrl) {
+        if(!processedPages.contains(pageUrl)) {
+            pagesToProcess.add(pageUrl);
+        }
     }
 
     public String getTreeDirection() {
         return "tree:" + treeDirection.toString();
     }
 
-    public void lookupNextPageToProcess(LdesPage page) {
-        Optional<String> nextRelationId = page.getRelationId(getTreeDirection());
+    public boolean isFullyReplayed() {
+        return fullyReplayed;
+    }
 
-        if (nextRelationId.isPresent()) {
-            nextPageToProcess = nextRelationId.get();
-        } else {
-            //TODO implement different cycle with polling interval when stream is up to date
-            fullyReplayed = true;
-        }
+    public void setFullyReplayed(boolean fullyReplayed) {
+        this.fullyReplayed = fullyReplayed;
     }
 }

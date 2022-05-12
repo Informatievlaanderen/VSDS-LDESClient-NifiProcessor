@@ -23,7 +23,7 @@ public final class LdesProcessorProperties {
             .Builder().name("TREE_DIRECTION")
             .displayName("Ldes tree direction")
             .description("Defines in which direction the LDES Client will follow the stream")
-            .required(true)
+            .required(false)
             .allowableValues(SUPPORTED_TREE_DIRECTIONS)
             .build();
 }
