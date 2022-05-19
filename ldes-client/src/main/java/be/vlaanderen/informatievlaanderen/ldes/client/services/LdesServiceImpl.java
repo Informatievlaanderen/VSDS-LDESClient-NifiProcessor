@@ -3,12 +3,12 @@ package be.vlaanderen.informatievlaanderen.ldes.client.services;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFParser;
 
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.*;
 
@@ -60,7 +60,7 @@ public class LdesServiceImpl implements LdesService {
 
                 StringWriter outputStream = new StringWriter();
 
-                RDFDataMgr.write(outputStream, outputModel, Lang.JSONLD11);
+                RDFDataMgr.write(outputStream, outputModel, RDFFormat.NQUADS);
 
                 ldesMembers.add(outputStream.toString().split("\n"));
             }
@@ -80,9 +80,8 @@ public class LdesServiceImpl implements LdesService {
 
     private void populateModel(Model model, Resource resource) {
         resource.listProperties().forEach(statement -> {
-            if (statement.getObject().isLiteral()) {
-                model.add(statement);
-            } else {
+            model.add(statement);
+            if (!statement.getObject().isLiteral()) {
                 populateModel(model, statement.getResource());
             }
         });
