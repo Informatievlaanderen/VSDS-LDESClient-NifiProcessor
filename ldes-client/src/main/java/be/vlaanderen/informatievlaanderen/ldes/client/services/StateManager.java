@@ -6,7 +6,7 @@ import java.util.Queue;
 import java.util.Set;
 
 public class StateManager {
-    private final Queue<String> fragmentsToProcessQueue;
+    protected final Queue<String> fragmentsToProcessQueue;
     protected final Set<String> processedFragments;
     protected final Set<String> processedMembers;
     private boolean fullyReplayed;
@@ -22,11 +22,11 @@ public class StateManager {
         return processedMembers.add(member);
     }
 
-    public boolean hasPagesToProcess() {
+    public boolean hasFragmentsToProcess() {
         return fragmentsToProcessQueue.iterator().hasNext();
     }
-    public String getNextPageToProcess() {
-        if(!hasPagesToProcess()) {
+    public String getNextFragmentToProcess() {
+        if(!hasFragmentsToProcess()) {
             throw new RuntimeException("No more pages to process");
         }
 
@@ -35,7 +35,7 @@ public class StateManager {
         return pageUrl;
     }
 
-    public void addNewPageToProcess(String pageUrl) {
+    public void addNewFragmentToProcess(String pageUrl) {
         if(!processedFragments.contains(pageUrl)) {
             fragmentsToProcessQueue.add(pageUrl);
         }

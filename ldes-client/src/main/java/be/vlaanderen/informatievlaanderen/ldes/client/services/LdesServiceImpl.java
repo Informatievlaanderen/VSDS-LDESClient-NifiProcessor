@@ -13,9 +13,9 @@ import java.util.List;
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.*;
 
 public class LdesServiceImpl implements LdesService {
-    private static final Resource ANY = null;
+    protected static final Resource ANY = null;
 
-    private final StateManager stateManager;
+    protected final StateManager stateManager;
 
     public LdesServiceImpl(String initialPageUrl) {
         stateManager = new StateManager(initialPageUrl);
@@ -26,17 +26,17 @@ public class LdesServiceImpl implements LdesService {
         Model model = ModelFactory.createDefaultModel();
 
         // Parsing the data
-        RDFParser.source(stateManager.getNextPageToProcess())
+        RDFParser.source(stateManager.getNextFragmentToProcess())
                 .forceLang(Lang.JSONLD11)
                 .parse(model);
 
         // Sending members
-        List<String[]> ldesMembers = processMembers(model);
+        List<String[]> ldesMembers = processLdesMembers(model);
 
         // Queuing next pages
         processRelations(model);
 
-        if (!stateManager.hasPagesToProcess()) {
+        if (!stateManager.hasFragmentsToProcess()) {
             stateManager.setFullyReplayed(true);
         }
 
@@ -45,44 +45,47 @@ public class LdesServiceImpl implements LdesService {
 
     @Override
     public boolean hasPagesToProcess() {
-        return stateManager.hasPagesToProcess();
+        return stateManager.hasFragmentsToProcess();
     }
 
-    private List<String[]> processMembers(Model model) {
+    protected List<String[]> processLdesMembers(Model model) {
         List<String[]> ldesMembers = new LinkedList<>();
         StmtIterator iter = model.listStatements(ANY, W3ID_TREE_MEMBER, ANY);
 
         iter.forEach(statement -> {
             if (stateManager.processMember(statement.getObject().toString())) {
-                Model outputModel = ModelFactory.createDefaultModel();
-                outputModel.add(statement);
-                populateModel(outputModel, statement.getResource());
-
-                StringWriter outputStream = new StringWriter();
-
-                RDFDataMgr.write(outputStream, outputModel, RDFFormat.NQUADS);
-
-                ldesMembers.add(outputStream.toString().split("\n"));
+                ldesMembers.add(processMember(statement));
             }
         });
 
         return ldesMembers;
     }
 
-    private void processRelations(Model model) {
-        List<Statement> relations = model.listStatements(ANY, W3ID_TREE_RELATION, ANY).toList();
+    protected String[] processMember(Statement statement) {
+        Model outputModel = ModelFactory.createDefaultModel();
+        outputModel.add(statement);
+        populateRdfModel(outputModel, statement.getResource());
 
-        relations.forEach(relation -> stateManager.addNewPageToProcess(relation.getResource()
+        StringWriter outputStream = new StringWriter();
+
+        RDFDataMgr.write(outputStream, outputModel, RDFFormat.NQUADS);
+
+        return outputStream.toString().split("\n");
+    }
+
+    protected void processRelations(Model model) {
+        model.listStatements(ANY, W3ID_TREE_RELATION, ANY)
+                .forEach(relation -> stateManager.addNewFragmentToProcess(relation.getResource()
                 .getProperty(W3ID_TREE_NODE)
                 .getResource()
                 .toString()));
     }
 
-    private void populateModel(Model model, Resource resource) {
+    private void populateRdfModel(Model model, Resource resource) {
         resource.listProperties().forEach(statement -> {
             model.add(statement);
             if (!statement.getObject().isLiteral()) {
-                populateModel(model, statement.getResource());
+                populateRdfModel(model, statement.getResource());
             }
         });
     }
