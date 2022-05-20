@@ -16,6 +16,7 @@
         <jakarta.json>2.0.1</jakarta.json>
         <apache-jena.version>4.4.0</apache-jena.version>
         <junit-jupiter-api.version>5.8.2</junit-jupiter-api.version>
+        <wiremock-jre8.version>2.33.2</wiremock-jre8.version>
     </properties>
 
     <dependencies>
@@ -43,6 +44,13 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit-jupiter-api.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>${wiremock-jre8.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

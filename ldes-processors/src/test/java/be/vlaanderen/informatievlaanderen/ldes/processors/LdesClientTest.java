@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,13 +40,6 @@ public class LdesClientTest {
 
     @Test
     void when_initiatingLdesClientWithNoTreeDirection_expectsLdesMembersFromAllDirections() {
-        stubFor(get("http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z")
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(get("http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z")
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(get("http://localhost:8089/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z")
-                .willReturn(aResponse().withStatus(200)));
-
         testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z");
 
         testRunner.run(10);
