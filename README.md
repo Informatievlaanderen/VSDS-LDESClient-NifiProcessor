@@ -1,9 +1,9 @@
-# NiFi Processor For LDES Components
+# NiFi Processor for LDES Components
 
 This component serves as a wrapping component for all LDES components. 
 As of the first version, this component shall also contain the business logic for the LDES client.
 
-## Build The Processors
+## Build the Processors
 
 To build the project run the following maven command:
 
@@ -15,7 +15,7 @@ The output of this process will be a NiFi Archive NAR.
 
 This artifact can be then used inside of the `lib` folder of your NiFi installation.
 
-## Using The Components 
+## Using the Components 
 
 The NiFi Archive will contain multiple LDES NiFi Processors. Below follows a short description how these can be used.
 
