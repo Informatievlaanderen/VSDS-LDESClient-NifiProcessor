@@ -50,7 +50,6 @@ public class LdesClientTest {
         assertTrue(dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
     }
 
-
     @Test
     void when_runningLdesClientWithFragmentContaining2DifferentLDES_expectsLdesMembersOnlyFromFragmentView() {
         testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?scenario=differentLdes");
@@ -62,6 +61,4 @@ public class LdesClientTest {
         assertEquals(dataFlowfiles.size(), 1);
         assertTrue(dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
     }
-
-
 }

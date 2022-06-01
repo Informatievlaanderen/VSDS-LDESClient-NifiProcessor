@@ -5,8 +5,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 
 public class LdesConstants {
-    public static final Model model = ModelFactory.createDefaultModel();
-
+    private static final Model model = ModelFactory.createDefaultModel();
     public static final String W3C_TREE = "https://w3id.org/tree#";
     public static final Property W3ID_TREE_MEMBER = model.createProperty(W3C_TREE, "member");
     public static final Property W3ID_TREE_VIEW = model.createProperty(W3C_TREE, "view");

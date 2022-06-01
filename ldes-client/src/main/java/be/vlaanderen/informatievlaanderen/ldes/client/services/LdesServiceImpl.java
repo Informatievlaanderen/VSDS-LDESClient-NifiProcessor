@@ -1,10 +1,9 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.riot.RDFParser;
 
 import java.io.StringWriter;
 import java.util.LinkedList;
@@ -22,29 +21,29 @@ public class LdesServiceImpl implements LdesService {
     }
 
     @Override
-    public List<String[]> processNextPage() {
-        Model model = ModelFactory.createDefaultModel();
+    public void populateFragmentQueue() {
+        stateManager.populateFragmentQueue();
+    }
 
-        // Parsing the data
-        RDFParser.source(stateManager.getNextFragmentToProcess())
-                .forceLang(Lang.JSONLD11)
-                .parse(model);
+    @Override
+    public List<String[]> processNextFragment() {
+        String fragmentToProcess = stateManager.getNextFragmentToProcess();
+
+        LdesFragment ldesFragment = LdesFragment.fromURL(fragmentToProcess);
 
         // Sending members
-        List<String[]> ldesMembers = processLdesMembers(model);
+        List<String[]> ldesMembers = processLdesMembers(ldesFragment.getModel());
 
         // Queuing next pages
-        processRelations(model);
+        processRelations(ldesFragment.getModel());
 
-        if (!stateManager.hasFragmentsToProcess()) {
-            stateManager.setFullyReplayed(true);
-        }
+        stateManager.processFragment(fragmentToProcess, ldesFragment.getMaxAge());
 
         return ldesMembers;
     }
 
     @Override
-    public boolean hasPagesToProcess() {
+    public boolean hasFragmentsToProcess() {
         return stateManager.hasFragmentsToProcess();
     }
 
@@ -83,9 +82,9 @@ public class LdesServiceImpl implements LdesService {
     protected void processRelations(Model model) {
         model.listStatements(ANY, W3ID_TREE_RELATION, ANY)
                 .forEach(relation -> stateManager.addNewFragmentToProcess(relation.getResource()
-                .getProperty(W3ID_TREE_NODE)
-                .getResource()
-                .toString()));
+                        .getProperty(W3ID_TREE_NODE)
+                        .getResource()
+                        .toString()));
     }
 
     private void populateRdfModel(Model model, Resource resource) {

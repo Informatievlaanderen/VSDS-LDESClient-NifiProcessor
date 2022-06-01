@@ -43,9 +43,12 @@ public class LdesClient extends AbstractProcessor {
     @Override
     public void onTrigger(ProcessContext context, ProcessSession session) throws ProcessException {
         FlowManager flowManager = new FlowManager(session);
-        if (ldesService.hasPagesToProcess()) {
-            List<String[]> ldesMembers = ldesService.processNextPage();
+
+        if (ldesService.hasFragmentsToProcess()) {
+            List<String[]> ldesMembers = ldesService.processNextFragment();
             ldesMembers.forEach(ldesMember -> flowManager.sendTriplesToRelation(ldesMember, DATA_RELATIONSHIP));
+        } else {
+            ldesService.populateFragmentQueue();
         }
     }
 

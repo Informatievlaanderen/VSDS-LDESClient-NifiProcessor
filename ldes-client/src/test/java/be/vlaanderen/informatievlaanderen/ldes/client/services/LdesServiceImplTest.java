@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -53,12 +54,23 @@ public class LdesServiceImplTest {
     }
 
     @Test
-    void when_processRelations_expectPageQueueToBeUpdated() {
+    void when_processRelations_expectFragmentQueueToBeUpdated() {
         assertEquals(ldesService.stateManager.fragmentsToProcessQueue.size(), 1);
 
         ldesService.processRelations(getInputModelFromUrl(initialFragmentUrl));
 
         assertEquals(ldesService.stateManager.fragmentsToProcessQueue.size(), 2);
+    }
+
+    @Test
+    void when_ProcessNextFragmentWith2Fragments_expect2MembersPerFragment() {
+        List<String[]> ldesMembers = ldesService.processNextFragment();
+
+        assertEquals(ldesMembers.size(), 2);
+
+        ldesMembers = ldesService.processNextFragment();
+
+        assertEquals(ldesMembers.size(), 2);
     }
 
     private Model getInputModelFromUrl(String fragmentUrl) {

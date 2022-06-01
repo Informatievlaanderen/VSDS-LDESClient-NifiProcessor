@@ -35,7 +35,7 @@
       ],
       "items": [
         {
-        "@id": "http://localhost:8089/exampleData/10034919/29796",
+        "@id": "https://private-api.gipod.test-vlaanderen.be/api/v1/mobility-hindrances/10034919/29796",
         "@type": "MobilityHindrance",
         "gipodId": 10034919,
         "identifier": [],
@@ -51,14 +51,14 @@
         "generatedAtTime": "2021-02-17T14:16:59.233Z",
         "eventName": "MobilityHindranceWasRegistered",
         "isVersionOf": "/api/v1/mobility-hindrances/10034919",
-        "memberOf": "http://localhost:8089/exampleData",
+        "memberOf": "https://private-api.gipod.test-vlaanderen.be/api/v1/ldes/mobility-hindrances",
         "lastModifiedOn": "2021-02-17T14:16:59.2053421Z",
         "lastModifiedBy": {},
         "createdOn": "2021-02-17T14:16:59.2053421Z",
         "createdBy": {}
       },
         {
-          "@id": "http://localhost:8089/exampleData/10034919/29797",
+          "@id": "https://private-api.gipod.test-vlaanderen.be/api/v1/mobility-hindrances/10034919/29797",
           "@type": "MobilityHindrance",
           "gipodId": 10034919,
           "identifier": [
@@ -148,7 +148,7 @@
           "generatedAtTime": "2021-02-17T14:16:59.233Z",
           "eventName": "MobilityHindranceZoneWasAdded",
           "isVersionOf": "/api/v1/mobility-hindrances/10034919",
-          "memberOf": "http://localhost:8089/exampleData",
+          "memberOf": "https://private-api.gipod.test-vlaanderen.be/api/v1/ldes/mobility-hindrances",
           "lastModifiedOn": "2021-02-17T14:16:59.2143997Z",
           "lastModifiedBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",

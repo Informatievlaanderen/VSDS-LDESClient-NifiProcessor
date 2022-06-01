@@ -4,6 +4,7 @@ import java.util.List;
 
 public interface LdesService {
 
-    boolean hasPagesToProcess();
-    List<String[]> processNextPage();
+    void populateFragmentQueue();
+    boolean hasFragmentsToProcess();
+    List<String[]> processNextFragment();
 }
