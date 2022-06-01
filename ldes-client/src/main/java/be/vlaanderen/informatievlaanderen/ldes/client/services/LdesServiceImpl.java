@@ -1,23 +1,15 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import org.apache.jena.rdf.model.*;
-import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.riot.RDFParser;
 
-import java.io.IOException;
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
 
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.*;
-import static java.util.Arrays.stream;
 
 public class LdesServiceImpl implements LdesService {
     protected static final Resource ANY = null;
@@ -35,25 +27,19 @@ public class LdesServiceImpl implements LdesService {
 
     @Override
     public List<String[]> processNextFragment() {
-        try {
-            Model model = ModelFactory.createDefaultModel();
+        String fragmentToProcess = stateManager.getNextFragmentToProcess();
 
-            String fragmentToProcess = stateManager.getNextFragmentToProcess();
+        LdesFragment ldesFragment = LdesFragment.fromURL(fragmentToProcess);
 
-            Long fragmentMaxAge = retrieveFragment(fragmentToProcess, model);
+        // Sending members
+        List<String[]> ldesMembers = processLdesMembers(ldesFragment.getModel());
 
-            // Sending members
-            List<String[]> ldesMembers = processLdesMembers(model);
+        // Queuing next pages
+        processRelations(ldesFragment.getModel());
 
-            // Queuing next pages
-            processRelations(model);
+        stateManager.processFragment(fragmentToProcess, ldesFragment.getMaxAge());
 
-            stateManager.processFragment(fragmentToProcess, fragmentMaxAge);
-
-            return ldesMembers;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return ldesMembers;
     }
 
     @Override
@@ -101,41 +87,6 @@ public class LdesServiceImpl implements LdesService {
                 populateRdfModel(model, statement.getResource());
             }
         });
-    }
-
-    /**
-     * Retrieves fragment from URL and stores it into the Model whilst passing returning the max age (in seconds) of the fragment
-     *
-     * @param url URL to retrieve fragment from
-     * @param model Jena Model to populate based on the data from the provided url
-     * @return the max age (in seconds) of the fragment
-     */
-    private Long retrieveFragment(String url, Model model) throws IOException {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-
-        //Executing the Get request
-        HttpResponse httpresponse = httpclient.execute(new HttpGet(url));
-
-        RDFParser.source(httpresponse.getEntity().getContent())
-                .forceLang(Lang.JSONLD11)
-                .parse(model);
-
-        return stream(httpresponse.getHeaders("Cache-Control"))
-                .findFirst()
-                .map(header -> {
-                    if (stream(header.getElements())
-                            .anyMatch(headerElement -> "immutable".equals(header.getName()))) {
-                        return null;
-                    } else {
-                        return stream(header.getElements())
-                                .filter(headerElement -> "max-age".equals(headerElement.getName()))
-                                .findFirst()
-                                .map(HeaderElement::getValue)
-                                .map(Long::parseLong)
-                                .orElse(null);
-                    }
-                })
-                .orElse(null);
     }
 
 }
