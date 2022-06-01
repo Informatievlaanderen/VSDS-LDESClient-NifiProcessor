@@ -100,7 +100,7 @@
           "generatedAtTime": "2022-04-07T18:23:24.707Z",
           "eventName": "MobilityHindranceWasRegistered",
           "isVersionOf": "/api/v1/mobility-hindrances/10054228",
-          "memberOf": "localhost:8089/api/v1/ldes/mobility-hindrances",
+          "memberOf": "http://localhost:8089/exampleData",
           "lastModifiedOn": "2022-04-07T18:23:24.6840261Z",
           "lastModifiedBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",
@@ -205,7 +205,7 @@
           "generatedAtTime": "2022-04-07T18:23:24.707Z",
           "eventName": "MobilityHindranceZoneWasAdded",
           "isVersionOf": "/api/v1/mobility-hindrances/10054228",
-          "memberOf": "localhost:8089/api/v1/ldes/mobility-hindrances",
+          "memberOf": "http://localhost:8089/exampleData",
           "lastModifiedOn": "2022-04-07T18:23:24.6922664Z",
           "lastModifiedBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",

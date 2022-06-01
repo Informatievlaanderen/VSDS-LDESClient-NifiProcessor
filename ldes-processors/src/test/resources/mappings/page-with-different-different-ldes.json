@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z"
+    "url": "/exampleData?scenario=differentLdes"
   },
   "response": {
     "status": 200,
@@ -19,53 +19,16 @@
         "timestampPath": "prov:generatedAtTime",
         "versionOfPath": "dct:isVersionOf"
       },
-      "tree:relation": [
-        {
-          "tree:node": "http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z",
-          "@type": "tree:LessThanRelation",
-          "tree:path": "prov:generatedAtTime",
-          "tree:value": "2022-05-03T00:00:00.000Z"
-        },
-        {
-          "tree:node": "http://localhost:8089/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z",
-          "@type": "tree:GreaterThanRelation",
-          "tree:path": "prov:generatedAtTime",
-          "tree:value": "2022-05-05T00:00:00.000Z"
-        }
-      ],
       "items": [
         {
-        "@id": "http://localhost:8089/exampleData/10034919/29796",
-        "@type": "MobilityHindrance",
-        "gipodId": 10034919,
-        "identifier": [],
-        "isConsequenceOf": [],
-        "description": "Description of the mobility hindrance",
-        "owner": {},
-        "contactOrganisation": [],
-        "zone": [],
-        "period": [],
-        "timeSchedule": {},
-        "permittedBy": [],
-        "status": {},
-        "generatedAtTime": "2021-02-17T14:16:59.233Z",
-        "eventName": "MobilityHindranceWasRegistered",
-        "isVersionOf": "/api/v1/mobility-hindrances/10034919",
-        "memberOf": "http://localhost:8089/exampleData",
-        "lastModifiedOn": "2021-02-17T14:16:59.2053421Z",
-        "lastModifiedBy": {},
-        "createdOn": "2021-02-17T14:16:59.2053421Z",
-        "createdBy": {}
-      },
-        {
-          "@id": "http://localhost:8089/exampleData/10034919/29797",
+          "@id": "http://localhost:8089/exampleData/10054228/165875",
           "@type": "MobilityHindrance",
-          "gipodId": 10034919,
+          "gipodId": 10054228,
           "identifier": [
             {
               "@type": "Identifier",
               "Identifier.identifier": {
-                "value": "10034919",
+                "value": "10054228",
                 "type": "gipodId"
               },
               "assignedByName": "https://gipod.vlaanderen.be"
@@ -78,16 +41,16 @@
               "gipodId": 103748
             }
           ],
-          "description": "Description of the mobility hindrance",
+          "description": "Description of the mobility hindrance Postman",
           "owner": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",
             "@type": "Organisation",
-            "preferredName": "AIV"
+            "preferredName": "Agentschap Informatie Vlaanderen"
           },
           "contactOrganisation": [],
           "zone": [
             {
-              "@id": "/api/v1/mobility-hindrances/10034919/zones/72facaaa-f26b-4ec0-ac2d-cff24961f13d",
+              "@id": "/api/v1/mobility-hindrances/10054228/zones/43dc1eca-7b3f-4537-9ed6-4025ed02b715",
               "@type": "Zone",
               "consequence": [
                 {
@@ -97,7 +60,7 @@
               ],
               "geometry": {
                 "@type": "Geometry",
-                "wkt": "POLYGON ((122980.5 183762, 122973.5 183742.75, 123007 183740.5, 122980.5 183762))"
+                "wkt": "POLYGON ((146161.1 159801.2, 146135.6 159743.9, 146128.4 159695.5, 146161.1 159801.2))"
               },
               "zoneType": {
                 "@id": "/api/v1/taxonomies/zonetypes/0fb72ef7-6ac9-4a70-b295-a30ea215d250",
@@ -108,19 +71,19 @@
           "period": [
             {
               "@type": "Period",
-              "start": "2022-05-12T11:09:00Z",
-              "end": "2022-05-14T11:09:00Z"
+              "start": "2023-05-12T11:09:00Z",
+              "end": "2023-05-14T11:09:00Z"
             },
             {
               "@type": "Period",
-              "start": "2022-05-20T11:09:00Z",
-              "end": "2022-05-22T11:09:00Z"
+              "start": "2023-05-20T11:09:00Z",
+              "end": "2023-05-22T11:09:00Z"
             }
           ],
           "timeSchedule": {
             "@type": "TimeSchedule",
-            "startDate": "2022-10-15",
-            "endDate": "2022-10-17",
+            "startDate": "2023-10-15",
+            "endDate": "2023-10-17",
             "repeatFrequency": "P1M",
             "until": null,
             "repeatCount": 12,
@@ -137,7 +100,7 @@
             "byMonthDay": null,
             "bySetPos": null,
             "exceptDate": [
-              "2023-02-15"
+              "2024-02-15"
             ]
           },
           "permittedBy": [],
@@ -145,22 +108,27 @@
             "@id": "/api/v1/taxonomies/statuses/0a4ee99b-8b8a-47c8-913f-117220febee0",
             "prefLabel": "In opmaak"
           },
-          "generatedAtTime": "2021-02-17T14:16:59.233Z",
+          "generatedAtTime": "2022-04-07T18:23:24.707Z",
           "eventName": "MobilityHindranceZoneWasAdded",
-          "isVersionOf": "/api/v1/mobility-hindrances/10034919",
+          "isVersionOf": "/api/v1/mobility-hindrances/10054228",
           "memberOf": "http://localhost:8089/exampleData",
-          "lastModifiedOn": "2021-02-17T14:16:59.2143997Z",
+          "lastModifiedOn": "2022-04-07T18:23:24.6922664Z",
           "lastModifiedBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",
             "@type": "Organisation",
-            "preferredName": "AIV"
+            "preferredName": "Agentschap Informatie Vlaanderen"
           },
-          "createdOn": "2021-02-17T14:16:59.2053421Z",
+          "createdOn": "2022-04-07T18:23:24.6840261Z",
           "createdBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",
             "@type": "Organisation",
-            "preferredName": "AIV"
+            "preferredName": "Agentschap Informatie Vlaanderen"
           }
+        },
+        {
+          "@id": "http://localhost:8089/otherData/1006589/10005",
+          "description": "An example of a different LDES",
+          "memberOf": "http://localhost:8089/otherData"
         }
       ]
     },

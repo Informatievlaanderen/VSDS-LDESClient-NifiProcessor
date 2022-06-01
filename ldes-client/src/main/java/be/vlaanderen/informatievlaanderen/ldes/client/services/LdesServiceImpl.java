@@ -49,8 +49,15 @@ public class LdesServiceImpl implements LdesService {
     }
 
     protected List<String[]> processLdesMembers(Model model) {
+        Resource subjectId = model.listStatements(ANY, W3ID_TREE_VIEW, ANY)
+                .toList()
+                .stream()
+                .findFirst()
+                .map(Statement::getSubject)
+                .orElse(null);
+
         List<String[]> ldesMembers = new LinkedList<>();
-        StmtIterator iter = model.listStatements(ANY, W3ID_TREE_MEMBER, ANY);
+        StmtIterator iter = model.listStatements(subjectId, W3ID_TREE_MEMBER, ANY);
 
         iter.forEach(statement -> {
             if (stateManager.processMember(statement.getObject().toString())) {

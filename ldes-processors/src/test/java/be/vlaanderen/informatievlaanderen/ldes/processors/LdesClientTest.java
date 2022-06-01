@@ -39,7 +39,7 @@ public class LdesClientTest {
     }
 
     @Test
-    void when_initiatingLdesClientWithNoTreeDirection_expectsLdesMembersFromAllDirections() {
+    void when_runningLdesClientWithConnectedFragments_expectsAllLdesMembers() {
         testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z");
 
         testRunner.run(10);
@@ -47,6 +47,19 @@ public class LdesClientTest {
         List<MockFlowFile> dataFlowfiles = testRunner.getFlowFilesForRelationship(DATA_RELATIONSHIP);
 
         assertEquals(dataFlowfiles.size(), 6);
+        assertTrue(dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
+    }
+
+
+    @Test
+    void when_runningLdesClientWithFragmentContaining2DifferentLDES_expectsLdesMembersOnlyFromFragmentView() {
+        testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?scenario=differentLdes");
+
+        testRunner.run(10);
+
+        List<MockFlowFile> dataFlowfiles = testRunner.getFlowFilesForRelationship(DATA_RELATIONSHIP);
+
+        assertEquals(dataFlowfiles.size(), 1);
         assertTrue(dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
     }
 
