@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -13,10 +14,11 @@
 
     <properties>
         <nifi-api.version>1.16.0</nifi-api.version>
-        <nifi-utils.version>1.16.0</nifi-utils.version>
-        <nifi-mock.version>1.16.0</nifi-mock.version>
+        <nifi-utils.version>1.16.2</nifi-utils.version>
+        <nifi-mock.version>1.16.2</nifi-mock.version>
         <junit-jupiter-api.version>5.8.2</junit-jupiter-api.version>
         <wiremock-jre8.version>2.33.2</wiremock-jre8.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>

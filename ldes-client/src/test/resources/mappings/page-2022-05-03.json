@@ -7,9 +7,9 @@
     "status": 200,
     "jsonBody": {
       "@context": [
-        "https://private-api.gipod.test-vlaanderen.be/api/v1/context/gipod.jsonld"
+        "https://private-api.gipod.beta-vlaanderen.be/api/v1/context/gipod.jsonld"
       ],
-      "@id": "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z",
+      "@id": "http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z",
       "@type": "Node",
       "viewOf": "http://localhost:8089/exampleData",
       "collectionInfo": {
@@ -100,7 +100,7 @@
           "generatedAtTime": "2022-04-07T18:23:24.707Z",
           "eventName": "MobilityHindranceWasRegistered",
           "isVersionOf": "/api/v1/mobility-hindrances/10054228",
-          "memberOf": "localhost:8089/api/v1/ldes/mobility-hindrances",
+          "memberOf": "http://localhost:8089/exampleData",
           "lastModifiedOn": "2022-04-07T18:23:24.6840261Z",
           "lastModifiedBy": {
             "@id": "/api/v1/organisations/9c5926df-195d-01be-a40a-360bcd21d662",
@@ -115,7 +115,7 @@
           }
         },
         {
-          "@id": "localhost:8089/api/v1/mobility-hindrances/10054228/165875",
+          "@id": "localhost:8089/exampleData/10054228/165875",
           "@type": "MobilityHindrance",
           "gipodId": 10054228,
           "identifier": [

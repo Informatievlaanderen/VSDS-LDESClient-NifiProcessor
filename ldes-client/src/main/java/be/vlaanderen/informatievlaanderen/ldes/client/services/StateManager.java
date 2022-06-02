@@ -33,10 +33,9 @@ public class StateManager {
     public boolean hasFragmentsToProcess() {
         return fragmentsToProcessQueue.iterator().hasNext();
     }
-    public String getNextFragmentToProcess() {
-        System.out.println("Saved Fragments : " + this.processedFragments);
 
-        if(!hasFragmentsToProcess()) {
+    public String getNextFragmentToProcess() {
+        if (!hasFragmentsToProcess()) {
             throw new RuntimeException("No more fragments to process");
         }
 
@@ -44,7 +43,7 @@ public class StateManager {
     }
 
     public void addNewFragmentToProcess(String pageUrl) {
-        if(!processedFragments.containsKey(pageUrl)) {
+        if (!processedFragments.containsKey(pageUrl)) {
             fragmentsToProcessQueue.add(pageUrl);
         }
     }
@@ -52,8 +51,7 @@ public class StateManager {
     public void processFragment(String fragmentUrl, Long maxAge) {
         if (maxAge == null) {
             processFragment(fragmentUrl);
-        }
-        else {
+        } else {
             this.processedFragments.put(fragmentUrl, new FragmentSettings(LocalDateTime.now(clock).plusSeconds(maxAge)));
         }
     }
@@ -64,7 +62,7 @@ public class StateManager {
 
     public void populateFragmentQueue() {
         processedFragments.forEach((fragmentURL, fragmentSettings) -> {
-            if(fragmentSettings.getExpireDate() != null  && fragmentSettings.getExpireDate().isBefore(LocalDateTime.now(clock))) {
+            if (fragmentSettings.getExpireDate() != null && fragmentSettings.getExpireDate().isBefore(LocalDateTime.now(clock))) {
                 fragmentsToProcessQueue.add(fragmentURL);
             }
         });

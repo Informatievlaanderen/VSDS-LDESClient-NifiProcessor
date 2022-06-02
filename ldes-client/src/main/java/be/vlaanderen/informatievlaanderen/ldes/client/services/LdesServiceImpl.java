@@ -32,7 +32,7 @@ public class LdesServiceImpl implements LdesService {
         LdesFragment ldesFragment = LdesFragment.fromURL(fragmentToProcess);
 
         // Sending members
-        List<String[]> ldesMembers = processLdesMembers(ldesFragment.getModel());
+        List<String[]> ldesMembers = processLdesMembers(ldesFragment.getModel(), ldesFragment.getFragmentId());
 
         // Queuing next pages
         processRelations(ldesFragment.getModel());
@@ -47,8 +47,9 @@ public class LdesServiceImpl implements LdesService {
         return stateManager.hasFragmentsToProcess();
     }
 
-    protected List<String[]> processLdesMembers(Model model) {
-        Resource subjectId = model.listStatements(ANY, W3ID_TREE_VIEW, ANY)
+    protected List<String[]> processLdesMembers(Model model, String fragmentId) {
+
+        Resource subjectId = model.listStatements(ANY, W3ID_TREE_VIEW, model.createResource(fragmentId))
                 .toList()
                 .stream()
                 .findFirst()
