@@ -7,11 +7,13 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFFormat;
 import org.apache.jena.riot.RDFParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
@@ -29,29 +31,6 @@ public class LdesServiceImplTest {
     private final String initialFragmentUrl = "http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z";
 
     private final LdesServiceImpl ldesService = new LdesServiceImpl(initialFragmentUrl);
-
-    @Test
-    void when_processMember_onlyExpectsOneRootNode() {
-        Model outputModel = ModelFactory.createDefaultModel();
-        RDFDataMgr.read(outputModel, getInputStreamOfFirstLdesMemberFromUrl(initialFragmentUrl), Lang.NQUADS);
-
-        Set<RDFNode> objectURIResources = outputModel.listObjects()
-                .toList()
-                .stream()
-                .filter(RDFNode::isURIResource)
-                .collect(Collectors.toSet());
-
-        long rootNodeCount = outputModel.listSubjects().toSet()
-                .stream()
-                .filter(RDFNode::isResource)
-                .collect(Collectors.toSet())
-                .stream()
-                .filter(resource -> !objectURIResources.contains(resource))
-                .filter(resource -> !resource.isAnon())
-                .count();
-
-        assertEquals(rootNodeCount, 1, "Ldes member only contains one root node");
-    }
 
     @Test
     void when_processRelations_expectFragmentQueueToBeUpdated() {
@@ -85,9 +64,8 @@ public class LdesServiceImplTest {
 
     private InputStream getInputStreamOfFirstLdesMemberFromUrl(String fragmentUrl) {
         Model inputModel = getInputModelFromUrl(fragmentUrl);
-        StmtIterator iter = inputModel.listStatements(ANY, W3ID_TREE_MEMBER, ANY);
 
-        return new ByteArrayInputStream(String.join(lineSeparator(), asList(ldesService.processMember(iter.nextStatement())))
+        return new ByteArrayInputStream(String.join(lineSeparator(), asList(ldesService.processMember(inputModel)))
                 .getBytes(StandardCharsets.UTF_8));
     }
 }

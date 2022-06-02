@@ -115,7 +115,7 @@
           }
         },
         {
-          "@id": "localhost:8089/exampleData/10054228/165875",
+          "@id": "http://localhost:8089/exampleData/10054228/165876",
           "@type": "MobilityHindrance",
           "gipodId": 10054228,
           "identifier": [
