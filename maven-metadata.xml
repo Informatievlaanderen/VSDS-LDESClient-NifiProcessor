@@ -1,0 +1,9 @@
+<metadata>
+    <plugins>
+        <plugin>
+            <name>Formatter plugin</name>
+            <prefix>formatter</prefix>
+            <artifactId>formatter-maven-plugin</artifactId>
+        </plugin>
+    </plugins>
+</metadata>

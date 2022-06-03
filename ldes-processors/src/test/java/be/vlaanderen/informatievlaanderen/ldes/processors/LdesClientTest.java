@@ -61,6 +61,7 @@ public class LdesClientTest {
         List<MockFlowFile> dataFlowfiles = testRunner.getFlowFilesForRelationship(DATA_RELATIONSHIP);
 
         assertEquals(dataFlowfiles.size(), 1);
-        assertTrue(dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
+        assertTrue(
+                dataFlowfiles.stream().allMatch(x -> new String(x.getData()).contains("https://w3id.org/tree#member")));
     }
 }
