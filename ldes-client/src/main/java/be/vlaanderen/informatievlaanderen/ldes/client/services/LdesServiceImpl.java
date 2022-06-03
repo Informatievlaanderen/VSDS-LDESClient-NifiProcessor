@@ -65,7 +65,15 @@ public class LdesServiceImpl implements LdesService {
 
         iter.forEach(statement -> {
             if (stateManager.processMember(statement.getObject().toString())) {
-                ldesMembers.add(processMember(modelExtract.extract(statement.getObject().asResource(), model)));
+                Model extractedModel = modelExtract.extract(statement.getObject().asResource(), model);
+
+                extractedModel.listSubjects()
+                        .filterKeep(RDFNode::isURIResource)
+                        .filterDrop(resource -> resource.getURI().equals(fragmentId))
+                        .forEach(resource -> model.listStatements(ANY, null, resource)
+                                .forEach(extractedModel::add));
+
+                ldesMembers.add(processMember(extractedModel));
             }
         });
 
