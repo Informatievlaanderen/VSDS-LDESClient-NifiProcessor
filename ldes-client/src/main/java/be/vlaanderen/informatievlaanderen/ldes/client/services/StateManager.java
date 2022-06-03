@@ -50,14 +50,14 @@ public class StateManager {
 
     public void processFragment(String fragmentUrl, Long maxAge) {
         if (maxAge == null) {
-            processFragment(fragmentUrl);
+            this.processedFragments.put(fragmentUrl, new FragmentSettings(IMMUTABLE));
         } else {
             this.processedFragments.put(fragmentUrl, new FragmentSettings(LocalDateTime.now(clock).plusSeconds(maxAge)));
         }
     }
 
     public void processFragment(String fragmentUrl) {
-        this.processedFragments.put(fragmentUrl, new FragmentSettings(IMMUTABLE));
+        processFragment(fragmentUrl, null);
     }
 
     public void populateFragmentQueue() {
