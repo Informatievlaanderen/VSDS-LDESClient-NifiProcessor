@@ -2,6 +2,7 @@ package be.vlaanderen.informatievlaanderen.ldes.client.valueobjects;
 
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -44,8 +45,7 @@ public class LdesFragment {
     public static LdesFragment fromURL(String url) {
         LdesFragment ldesFragment = new LdesFragment();
 
-        try {
-            CloseableHttpClient httpClient = HttpClients.createDefault();
+        try(CloseableHttpClient httpClient = HttpClients.createDefault()) {
 
             HttpClientContext context = HttpClientContext.create();
 
@@ -56,22 +56,24 @@ public class LdesFragment {
 
             HttpResponse httpResponse = httpClient.execute(new HttpGet(url), context);
 
-            RDFParser.source(httpResponse.getEntity().getContent())
-                    .forceLang(Lang.JSONLD11)
-                    .parse(ldesFragment.model);
+            if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                RDFParser.source(httpResponse.getEntity().getContent())
+                        .forceLang(Lang.JSONLD11)
+                        .parse(ldesFragment.model);
 
-            stream(httpResponse.getHeaders("Cache-Control"))
-                    .findFirst()
-                    .ifPresent(header -> {
-                        if (stream(header.getElements()).noneMatch(headerElement -> IMMUTABLE.equals(header.getName()))) {
-                            ldesFragment.maxAge = stream(header.getElements())
-                                    .filter(headerElement -> MAX_AGE.equals(headerElement.getName()))
-                                    .findFirst()
-                                    .map(HeaderElement::getValue)
-                                    .map(Long::parseLong)
-                                    .orElse(null);
-                        }
-                    });
+                stream(httpResponse.getHeaders("Cache-Control"))
+                        .findFirst()
+                        .ifPresent(header -> {
+                            if (stream(header.getElements()).noneMatch(headerElement -> IMMUTABLE.equals(header.getName()))) {
+                                ldesFragment.maxAge = stream(header.getElements())
+                                        .filter(headerElement -> MAX_AGE.equals(headerElement.getName()))
+                                        .findFirst()
+                                        .map(HeaderElement::getValue)
+                                        .map(Long::parseLong)
+                                        .orElse(null);
+                            }
+                        });
+            }
 
             return ldesFragment;
         } catch (IOException e) {
