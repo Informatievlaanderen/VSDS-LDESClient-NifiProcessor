@@ -34,22 +34,22 @@ public class LdesServiceImplTest {
 
     @Test
     void when_processRelations_expectFragmentQueueToBeUpdated() {
-        assertEquals(ldesService.stateManager.fragmentsToProcessQueue.size(), 1);
+        assertEquals(1, ldesService.stateManager.fragmentsToProcessQueue.size());
 
         ldesService.processRelations(getInputModelFromUrl(initialFragmentUrl));
 
-        assertEquals(ldesService.stateManager.fragmentsToProcessQueue.size(), 2);
+        assertEquals(2, ldesService.stateManager.fragmentsToProcessQueue.size());
     }
 
     @Test
     void when_ProcessNextFragmentWith2Fragments_expect2MembersPerFragment() {
         List<String[]> ldesMembers = ldesService.processNextFragment();
 
-        assertEquals(ldesMembers.size(), 2);
+        assertEquals(2, ldesMembers.size());
 
         ldesMembers = ldesService.processNextFragment();
 
-        assertEquals(ldesMembers.size(), 2);
+        assertEquals(2, ldesMembers.size());
     }
 
     private Model getInputModelFromUrl(String fragmentUrl) {
