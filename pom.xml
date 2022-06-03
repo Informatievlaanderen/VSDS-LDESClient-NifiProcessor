@@ -105,14 +105,15 @@
                         </executions>
                         <configuration>
                             <excludes>
-                                <sourcefiles>
-                                    <zipfileset>
-                                        <fileset dir="istack-commons-runtime-3.0.12.jar">
-                                            <exclude name="com/sun/istack/logging/StackHelper.class"/>
-                                        </fileset>
-                                    </zipfileset>
-                                </sourcefiles>
-
+                                <exclude>
+                                    <sourcefiles>
+                                        <zipfileset>
+                                            <fileset dir="istack-commons-runtime-3.0.12.jar">
+                                                <exclude name="com/sun/istack/logging/StackHelper.class"/>
+                                            </fileset>
+                                        </zipfileset>
+                                    </sourcefiles>
+                                </exclude>
                             </excludes>
                         </configuration>
                     </plugin>
