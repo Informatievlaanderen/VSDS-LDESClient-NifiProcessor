@@ -24,13 +24,14 @@ public class LdesClientTest {
 
     @Test
     void when_runningLdesClientWithConnectedFragments_expectsAllLdesMembers() {
-        testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z");
+        testRunner.setProperty("DATASOURCE_URL",
+                "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z");
 
         testRunner.run(10);
 
         List<MockFlowFile> dataFlowfiles = testRunner.getFlowFilesForRelationship(DATA_RELATIONSHIP);
 
-        assertEquals(dataFlowfiles.size(), 6);
+        assertEquals(6, dataFlowfiles.size());
     }
 
     @Test

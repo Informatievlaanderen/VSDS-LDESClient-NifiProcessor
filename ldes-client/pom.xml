@@ -55,4 +55,12 @@
         </dependency>
     </dependencies>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Informatievlaanderen/VSDS-LDESClient-NifiProcessor</url>
+        </repository>
+    </distributionManagement>
+
 </project>

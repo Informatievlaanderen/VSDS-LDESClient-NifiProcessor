@@ -19,7 +19,7 @@ import java.util.Set;
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATASOURCE_URL;
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
 
-@Tags({"ldes-client, vsds"})
+@Tags({ "ldes-client, vsds" })
 @CapabilityDescription("Takes in an LDES source and passes its individual LDES members")
 public class LdesClient extends AbstractProcessor {
 
@@ -51,6 +51,5 @@ public class LdesClient extends AbstractProcessor {
             ldesService.populateFragmentQueue();
         }
     }
-
 
 }
