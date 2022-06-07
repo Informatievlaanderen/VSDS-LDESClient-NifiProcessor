@@ -13,7 +13,7 @@ import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProc
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @WireMockTest(httpPort = 8089)
-public class LdesClientTest {
+class LdesClientTest {
 
     private TestRunner testRunner;
 

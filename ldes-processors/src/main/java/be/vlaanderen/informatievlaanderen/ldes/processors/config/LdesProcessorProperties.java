@@ -5,6 +5,8 @@ import org.apache.nifi.processor.util.StandardValidators;
 
 public final class LdesProcessorProperties {
 
+    private LdesProcessorProperties() {}
+
     public static final PropertyDescriptor DATASOURCE_URL =
             new PropertyDescriptor
                     .Builder()

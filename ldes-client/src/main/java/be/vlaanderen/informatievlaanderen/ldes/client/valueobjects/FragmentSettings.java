@@ -3,7 +3,7 @@ package be.vlaanderen.informatievlaanderen.ldes.client.valueobjects;
 import java.time.LocalDateTime;
 
 public class FragmentSettings {
-    public static LocalDateTime IMMUTABLE = null;
+    public static final LocalDateTime IMMUTABLE = null;
 
     private final LocalDateTime expireDate;
 

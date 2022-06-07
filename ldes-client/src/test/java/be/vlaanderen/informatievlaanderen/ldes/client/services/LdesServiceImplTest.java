@@ -26,7 +26,7 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @WireMockTest(httpPort = 8089)
-public class LdesServiceImplTest {
+class LdesServiceImplTest {
 
     private final String initialFragmentUrl = "http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z";
 

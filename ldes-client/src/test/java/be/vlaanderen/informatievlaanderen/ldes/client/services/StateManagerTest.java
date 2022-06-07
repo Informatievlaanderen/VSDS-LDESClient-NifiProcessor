@@ -11,7 +11,7 @@ import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class StateManagerTest {
+class StateManagerTest {
     StateManager stateManager;
     Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
     String fragmentToProcess = "localhost:8089/testData?1";
@@ -25,7 +25,7 @@ public class StateManagerTest {
     }
 
     @Test
-    public void when_StateManagerIsInitialized_QueueHasOnlyOneItem() {
+    void when_StateManagerIsInitialized_QueueHasOnlyOneItem() {
         assertTrue(stateManager.hasFragmentsToProcess());
         assertEquals(fragmentToProcess, stateManager.getNextFragmentToProcess());
         assertFalse(stateManager.hasFragmentsToProcess());
@@ -74,7 +74,7 @@ public class StateManagerTest {
 
         stateManager.populateFragmentQueue();
 
-        assertEquals(stateManager.fragmentsToProcessQueue.size(), 0);
+        assertEquals(0, stateManager.fragmentsToProcessQueue.size());
     }
 
     @Test
@@ -84,6 +84,6 @@ public class StateManagerTest {
 
         stateManager.populateFragmentQueue();
 
-        assertEquals(stateManager.fragmentsToProcessQueue.size(), 1);
+        assertEquals(1, stateManager.fragmentsToProcessQueue.size());
     }
 }
