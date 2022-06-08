@@ -9,11 +9,14 @@ import org.apache.jena.riot.RDFFormat;
 import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.*;
 
 public class LdesServiceImpl implements LdesService {
-    protected static final Resource ANY = null;
+    protected static final Resource ANY_RESOURCE = null;
+    protected static final Property ANY_PROPERTY = null;
 
     protected final StateManager stateManager;
 
@@ -51,9 +54,9 @@ public class LdesServiceImpl implements LdesService {
         return stateManager.hasFragmentsToProcess();
     }
 
-    protected List<String[]> processLdesMembers(Model model, String fragmentId) {
+    protected List<String[]> processLdesMembers(Model fragmentModel, String fragmentId) {
 
-        Resource subjectId = model.listStatements(ANY, W3ID_TREE_VIEW, model.createResource(fragmentId))
+        Resource subjectId = fragmentModel.listStatements(ANY_RESOURCE, W3ID_TREE_VIEW, fragmentModel.createResource(fragmentId))
                 .toList()
                 .stream()
                 .findFirst()
@@ -61,27 +64,45 @@ public class LdesServiceImpl implements LdesService {
                 .orElse(null);
 
         List<String[]> ldesMembers = new LinkedList<>();
-        StmtIterator iter = model.listStatements(subjectId, W3ID_TREE_MEMBER, ANY);
 
-        iter.forEach(statement -> {
-            if (stateManager.processMember(statement.getObject().toString())) {
-                ldesMembers.add(processMember(statement, model));
+        Set<Statement> statements = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE).toSet();
+        StmtIterator memberIterator = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE);
+
+        memberIterator.forEach(statement -> {
+            String memberId = statement.getObject().toString();
+            Set<Statement> otherMembers = statements.stream()
+                    .filter(statement1 -> !statement.equals(statement1))
+                    .collect(Collectors.toSet());
+            if (stateManager.shouldProcessMember(memberId)) {
+                ldesMembers.add(extractMember(statement, fragmentModel, otherMembers));
             }
         });
 
         return ldesMembers;
     }
 
-    protected String[] processMember(Statement statement, Model model) {
-        Model memberModel = modelExtract.extract(statement.getObject().asResource(), model);
+    protected String[] extractMember(Statement memberStatement, Model model, Set<Statement> otherLdesMembers) {
+        Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), model);
 
-        memberModel.add(statement);
+        memberModel.add(memberStatement);
 
         // Add reverse properties
-        memberModel.listSubjects()
-                .filterKeep(RDFNode::isURIResource)
-                .forEach(resource -> model.listStatements(ANY, null, resource)
-                        .forEach(memberModel::add));
+
+        model.listStatements(ANY_RESOURCE, ANY_PROPERTY, memberStatement.getResource())
+                .filterKeep(statement -> statement.getSubject().isURIResource())
+                .filterDrop(memberStatement::equals)
+                .forEach(statement -> {
+                    Model reversePropertyModel = modelExtract.extract(statement.getSubject(), model);
+                    List<Statement> otherMembers = reversePropertyModel.listStatements(statement.getSubject(), statement.getPredicate(), ANY_RESOURCE).toList();
+                    otherLdesMembers.forEach(otherLdesMember -> {
+                        reversePropertyModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, otherLdesMember.getResource()).toList();
+                    });
+                    otherMembers.forEach(otherMember -> {
+                        reversePropertyModel.remove(modelExtract.extract(otherMember.getResource(), reversePropertyModel));
+                    });
+
+                    memberModel.add(reversePropertyModel);
+                });
 
         StringWriter outputStream = new StringWriter();
 
@@ -91,7 +112,7 @@ public class LdesServiceImpl implements LdesService {
     }
 
     protected void processRelations(Model model) {
-        model.listStatements(ANY, W3ID_TREE_RELATION, ANY)
+        model.listStatements(ANY_RESOURCE, W3ID_TREE_RELATION, ANY_RESOURCE)
                 .forEach(relation -> stateManager.addNewFragmentToProcess(relation.getResource()
                         .getProperty(W3ID_TREE_NODE)
                         .getResource()

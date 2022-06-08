@@ -26,7 +26,7 @@ public class StateManager {
         this.clock = clock;
     }
 
-    public boolean processMember(String member) {
+    public boolean shouldProcessMember(String member) {
         return processedMembers.add(member);
     }
 

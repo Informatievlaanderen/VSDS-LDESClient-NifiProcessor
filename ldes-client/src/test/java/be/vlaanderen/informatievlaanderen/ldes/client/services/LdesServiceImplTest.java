@@ -3,34 +3,22 @@ package be.vlaanderen.informatievlaanderen.ldes.client.services;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.StmtIterator;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.apache.jena.riot.RDFParser;
+import org.apache.jena.riot.*;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import static be.vlaanderen.informatievlaanderen.ldes.client.services.LdesServiceImpl.ANY;
-import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_MEMBER;
-import static java.lang.System.lineSeparator;
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WireMockTest(httpPort = 8089)
 public class LdesServiceImplTest {
 
     private final String initialFragmentUrl = "http://localhost:8089/exampleData?generatedAtTime=2022-05-03T00:00:00.000Z";
+    private final String oneMemberFragmentUrl = "http://localhost:8089/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z";
+    private final String oneMemberUrl = "http://localhost:8089/member?generatedAtTime=2022-05-05T00:00:00.000Z";
 
-    private final LdesServiceImpl ldesService = new LdesServiceImpl(initialFragmentUrl);
+    private LdesServiceImpl ldesService = new LdesServiceImpl(initialFragmentUrl);
 
     @Test
     void when_processRelations_expectFragmentQueueToBeUpdated() {
@@ -50,6 +38,24 @@ public class LdesServiceImplTest {
         ldesMembers = ldesService.processNextFragment();
 
         assertEquals(2, ldesMembers.size());
+    }
+
+    @Test
+    void when_ProcessNextFragment_expectValidLdesMember() {
+        ldesService = new LdesServiceImpl(oneMemberFragmentUrl);
+        List<String[]> ldesMembers = ldesService.processNextFragment();
+
+        assertEquals(1, ldesMembers.size());
+
+        String output = String.join("\n", ldesMembers.get(0));
+
+        Model outputModel = RDFParserBuilder.create()
+                .fromString(output)
+                .lang(Lang.NQUADS)
+                .toModel();
+        Model validateModel = getInputModelFromUrl(oneMemberUrl);
+
+        assertTrue(outputModel.isIsomorphicWith(validateModel));
     }
 
     private Model getInputModelFromUrl(String fragmentUrl) {
