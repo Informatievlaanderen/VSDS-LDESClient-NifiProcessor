@@ -65,34 +65,35 @@ public class LdesServiceImpl implements LdesService {
 
         List<String[]> ldesMembers = new LinkedList<>();
 
-        Set<Statement> statements = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE).toSet();
         StmtIterator memberIterator = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE);
 
         memberIterator.forEach(statement -> {
             String memberId = statement.getObject().toString();
-            Set<Statement> otherMembers = statements.stream()
-                    .filter(statement1 -> !statement.equals(statement1))
-                    .collect(Collectors.toSet());
             if (stateManager.shouldProcessMember(memberId)) {
-                ldesMembers.add(extractMember(statement, fragmentModel, otherMembers));
+                ldesMembers.add(extractMember(statement, fragmentModel));
             }
         });
 
         return ldesMembers;
     }
 
-    protected String[] extractMember(Statement memberStatement, Model model, Set<Statement> otherLdesMembers) {
-        Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), model);
+    protected String[] extractMember(Statement memberStatement, Model fragmentModel) {
+        Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), fragmentModel);
 
         memberModel.add(memberStatement);
 
         // Add reverse properties
+        Set<Statement> otherLdesMembers = fragmentModel.listStatements(memberStatement.getSubject(), W3ID_TREE_MEMBER, ANY_RESOURCE)
+                .toSet()
+                .stream()
+                .filter(statement -> !memberStatement.equals(statement))
+                .collect(Collectors.toSet());
 
-        model.listStatements(ANY_RESOURCE, ANY_PROPERTY, memberStatement.getResource())
+        fragmentModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, memberStatement.getResource())
                 .filterKeep(statement -> statement.getSubject().isURIResource())
                 .filterDrop(memberStatement::equals)
                 .forEach(statement -> {
-                    Model reversePropertyModel = modelExtract.extract(statement.getSubject(), model);
+                    Model reversePropertyModel = modelExtract.extract(statement.getSubject(), fragmentModel);
                     List<Statement> otherMembers = reversePropertyModel.listStatements(statement.getSubject(), statement.getPredicate(), ANY_RESOURCE).toList();
                     otherLdesMembers.forEach(otherLdesMember -> {
                         reversePropertyModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, otherLdesMember.getResource()).toList();
