@@ -21,6 +21,7 @@ import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProc
 
 @Tags({ "ldes-client, vsds" })
 @CapabilityDescription("Takes in an LDES source and passes its individual LDES members")
+@SuppressWarnings("java:S2160")
 public class LdesClient extends AbstractProcessor {
 
     private LdesService ldesService;

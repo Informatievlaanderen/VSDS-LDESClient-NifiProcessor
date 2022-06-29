@@ -1,5 +1,6 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.FragmentSettings;
 
 import java.time.Clock;
@@ -36,7 +37,7 @@ public class StateManager {
 
     public String getNextFragmentToProcess() {
         if (!hasFragmentsToProcess()) {
-            throw new RuntimeException("No more fragments to process");
+            throw new LdesException("No more fragments to process");
         }
 
         return fragmentsToProcessQueue.poll();
