@@ -1,15 +1,16 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @WireMockTest(httpPort = 8089)
 class LdesServiceImplTest {
@@ -18,7 +19,12 @@ class LdesServiceImplTest {
     private final String oneMemberFragmentUrl = "http://localhost:8089/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z";
     private final String oneMemberUrl = "http://localhost:8089/member?generatedAtTime=2022-05-05T00:00:00.000Z";
 
-    private LdesServiceImpl ldesService = new LdesServiceImpl(initialFragmentUrl);
+    private LdesServiceImpl ldesService;
+
+    @BeforeEach
+    void setup() {
+        ldesService = new LdesServiceImpl(initialFragmentUrl);
+    }
 
     @Test
     void when_processRelations_expectFragmentQueueToBeUpdated() {

@@ -1,5 +1,6 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,11 +26,12 @@ class StateManagerTest {
     }
 
     @Test
-    void when_StateManagerIsInitialized_QueueHasOnlyOneItem() {
+    void when_StateManagerIsInitialized_QueueHasOnlyOneItemAndThrowsExceptionOtherwise() {
         assertTrue(stateManager.hasFragmentsToProcess());
         assertEquals(fragmentToProcess, stateManager.getNextFragmentToProcess());
+
         assertFalse(stateManager.hasFragmentsToProcess());
-        Assertions.assertThrows(RuntimeException.class, stateManager::getNextFragmentToProcess);
+        Assertions.assertThrows(LdesException.class, stateManager::getNextFragmentToProcess);
     }
 
     @Test
