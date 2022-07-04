@@ -25,13 +25,12 @@
         <jacoco.version>0.8.8</jacoco.version>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}${basedir}/../target/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <sonar.language>java</sonar.language>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.organization>vsds-sonar</sonar.organization>
-        <sonar.projectKey>VSDS-LDESClient-NifiProcessor-${project.groupId}:${project.artifactId}</sonar.projectKey>
+        <sonar.organization>informatievlaanderen</sonar.organization>
+        <sonar.projectKey>Informatievlaanderen_VSDS-LDESClient-NifiProcessor-${project.groupId}:${project.artifactId}</sonar.projectKey>
 
 
         <!-- Maven Properties -->
