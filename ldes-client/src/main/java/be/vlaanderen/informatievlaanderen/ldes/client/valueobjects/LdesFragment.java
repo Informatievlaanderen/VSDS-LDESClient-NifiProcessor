@@ -1,37 +1,34 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.valueobjects;
 
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFParser;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Optional;
-
-import static java.util.Arrays.stream;
 
 public class LdesFragment {
-    private static final String IMMUTABLE = "immutable";
-    private static final String MAX_AGE = "max-age";
 
-    private Long maxAge;
+    private final Model model = ModelFactory.createDefaultModel();
+    
     private String fragmentId;
-    private final Model model;
-
+    private LocalDateTime expirationDate;
+    
+    private boolean immutable = false;
+    private List<String[]> members;
+    private List<String> relations = new ArrayList<>();
+    
     public LdesFragment() {
-        this.model = ModelFactory.createDefaultModel();
+    	this(null, null);
+    }
+    
+    public LdesFragment(LocalDateTime expirationDate) {
+    	this(null, null);
     }
 
-    public Long getMaxAge() {
-        return maxAge;
+    public LdesFragment(String fragmentId, LocalDateTime expirationDate) {
+    	this.fragmentId = fragmentId;
+        this.expirationDate = expirationDate;
     }
 
     public Model getModel() {
@@ -42,42 +39,39 @@ public class LdesFragment {
         return fragmentId;
     }
 
-    public static LdesFragment fromURL(String url) {
-        LdesFragment ldesFragment = new LdesFragment();
+    public void setFragmentId(String fragmentId) {
+    	this.fragmentId = fragmentId;
+    }
 
-        try(CloseableHttpClient httpClient = HttpClients.createDefault()) {
-
-            HttpClientContext context = HttpClientContext.create();
-
-            ldesFragment.fragmentId = Optional.ofNullable(context.getRedirectLocations())
-                    .flatMap(uris -> uris.stream().reduce((uri, uri2) -> uri2))
-                    .map(URI::toString)
-                    .orElse(url);
-
-            HttpResponse httpResponse = httpClient.execute(new HttpGet(url), context);
-
-            if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                RDFParser.source(httpResponse.getEntity().getContent())
-                        .forceLang(Lang.JSONLD11)
-                        .parse(ldesFragment.model);
-
-                stream(httpResponse.getHeaders("Cache-Control"))
-                        .findFirst()
-                        .ifPresent(header -> {
-                            if (stream(header.getElements()).noneMatch(headerElement -> IMMUTABLE.equals(header.getName()))) {
-                                ldesFragment.maxAge = stream(header.getElements())
-                                        .filter(headerElement -> MAX_AGE.equals(headerElement.getName()))
-                                        .findFirst()
-                                        .map(HeaderElement::getValue)
-                                        .map(Long::parseLong)
-                                        .orElse(null);
-                            }
-                        });
-            }
-
-            return ldesFragment;
-        } catch (IOException e) {
-            return ldesFragment;
-        }
+    public LocalDateTime getExpirationDate() {
+        return expirationDate;
+    }
+    
+    public void setExpirationDate(LocalDateTime expirationDate) {
+    	this.expirationDate = expirationDate;
+    }
+    
+    public boolean isImmutable() {
+    	return immutable;
+    }
+    
+    public void setImmutable(boolean immutable) {
+    	this.immutable = immutable;
+    }
+    
+    public List<String[]> getMembers() {
+    	return members;
+    }
+    
+    public void setMembers(List<String[]> members) {
+    	this.members = members;
+    }
+    
+    public List<String> getRelations() {
+    	return relations;
+    }
+    
+    public void addRelation(String relation) {
+    	relations.add(relation);
     }
 }

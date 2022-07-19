@@ -1,6 +1,7 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
 import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,8 @@ import java.time.ZoneId;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class StateManagerTest {
-    StateManager stateManager;
+class LdesStateManagerTest {
+    LdesStateManager stateManager;
     Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
     String fragmentToProcess = "localhost:8089/testData?1";
     String nextFragmentToProcess = "localhost:8089/testData?2";
@@ -21,29 +22,30 @@ class StateManagerTest {
     String memberIdToProcess = "localhost:8089/api/v1/data/10228974/2397";
 
     @BeforeEach
-    public void init(){
-        stateManager = new StateManager(fragmentToProcess, clock);
+    public void init() {
+        stateManager = new LdesStateManager(clock);
+        stateManager.queueFragment(fragmentToProcess);
     }
 
     @Test
     void when_StateManagerIsInitialized_QueueHasOnlyOneItemAndThrowsExceptionOtherwise() {
         assertTrue(stateManager.hasFragmentsToProcess());
-        assertEquals(fragmentToProcess, stateManager.getNextFragmentToProcess());
+        assertEquals(fragmentToProcess, stateManager.getNextFragment());
 
         assertFalse(stateManager.hasFragmentsToProcess());
-        Assertions.assertThrows(LdesException.class, stateManager::getNextFragmentToProcess);
+        Assertions.assertThrows(LdesException.class, stateManager::getNextFragment);
     }
 
     @Test
     void when_tryingToProcessTheSameFragmentTwice_FragmentDoesNotGetAddedToQueue() {
         assertTrue(stateManager.hasFragmentsToProcess());
 
-        stateManager.processFragment(stateManager.getNextFragmentToProcess());
+        stateManager.processFragment(stateManager.getNextFragment());
 
-        stateManager.addNewFragmentToProcess(fragmentToProcess);
-        stateManager.addNewFragmentToProcess(nextFragmentToProcess);
+        stateManager.queueFragment(fragmentToProcess);
+        stateManager.queueFragment(nextFragmentToProcess);
 
-        assertEquals(nextFragmentToProcess, stateManager.getNextFragmentToProcess());
+        assertEquals(nextFragmentToProcess, stateManager.getNextFragment());
         assertFalse(stateManager.hasFragmentsToProcess());
     }
 
@@ -72,20 +74,20 @@ class StateManagerTest {
 
     @Test
     void when_populateFragmentQueueWithNoInvalidFragments_AddNothingToQueue() {
-        stateManager.fragmentsToProcessQueue.clear();
+        stateManager.fragmentsToProcess.clear();
 
         stateManager.populateFragmentQueue();
 
-        assertEquals(0, stateManager.fragmentsToProcessQueue.size());
+        assertEquals(0, stateManager.fragmentsToProcess.size());
     }
 
     @Test
     void when_populateFragmentQueueWith1InvalidFragment_InvalidFragmentGetsAddedToQueue() {
-        stateManager.fragmentsToProcessQueue.clear();
+        stateManager.fragmentsToProcess.clear();
         stateManager.processFragment(fragmentToProcess, -1L);
 
         stateManager.populateFragmentQueue();
 
-        assertEquals(1, stateManager.fragmentsToProcessQueue.size());
+        assertEquals(1, stateManager.fragmentsToProcess.size());
     }
 }

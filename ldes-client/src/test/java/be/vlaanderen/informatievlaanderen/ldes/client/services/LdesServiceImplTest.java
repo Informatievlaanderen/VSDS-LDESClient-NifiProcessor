@@ -1,6 +1,5 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
-import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -23,16 +22,16 @@ class LdesServiceImplTest {
 
     @BeforeEach
     void setup() {
-        ldesService = new LdesServiceImpl(initialFragmentUrl);
+        ldesService = new LdesServiceImpl(initialFragmentUrl, Lang.JSONLD11);
     }
 
     @Test
     void when_processRelations_expectFragmentQueueToBeUpdated() {
-        assertEquals(1, ldesService.stateManager.fragmentsToProcessQueue.size());
+        assertEquals(1, ldesService.stateManager.fragmentsToProcess.size());
 
-        ldesService.processRelations(getInputModelFromUrl(initialFragmentUrl));
+        ldesService.extractRelations(getInputModelFromUrl(initialFragmentUrl));
 
-        assertEquals(2, ldesService.stateManager.fragmentsToProcessQueue.size());
+        assertEquals(2, ldesService.stateManager.fragmentsToProcess.size());
     }
 
     @Test
@@ -48,7 +47,7 @@ class LdesServiceImplTest {
 
     @Test
     void when_ProcessNextFragment_expectValidLdesMember() {
-        ldesService = new LdesServiceImpl(oneMemberFragmentUrl);
+        ldesService = new LdesServiceImpl(oneMemberFragmentUrl, Lang.JSONLD11);
         List<String[]> ldesMembers = ldesService.processNextFragment();
 
         assertEquals(1, ldesMembers.size());

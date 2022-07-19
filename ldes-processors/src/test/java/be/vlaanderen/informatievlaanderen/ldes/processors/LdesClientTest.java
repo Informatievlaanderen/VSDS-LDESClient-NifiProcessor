@@ -24,7 +24,7 @@ class LdesClientTest {
 
     @Test
     void when_runningLdesClientWithConnectedFragments_expectsAllLdesMembers() {
-        testRunner.setProperty("DATASOURCE_URL",
+        testRunner.setProperty("DATA_SOURCE_URL",
                 "http://localhost:8089/exampleData?generatedAtTime=2022-05-04T00:00:00.000Z");
 
         testRunner.run(10);
@@ -36,7 +36,7 @@ class LdesClientTest {
 
     @Test
     void when_runningLdesClientWithFragmentContaining2DifferentLDES_expectsLdesMembersOnlyFromFragmentView() {
-        testRunner.setProperty("DATASOURCE_URL", "http://localhost:8089/exampleData?scenario=differentLdes");
+        testRunner.setProperty("DATA_SOURCE_URL", "http://localhost:8089/exampleData?scenario=differentLdes");
 
         testRunner.run(10);
 
