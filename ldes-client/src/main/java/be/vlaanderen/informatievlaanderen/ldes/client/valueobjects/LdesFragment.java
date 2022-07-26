@@ -7,6 +7,8 @@ import java.util.List;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesMemberNotFoundException;
+
 public class LdesFragment {
 
     private final Model model = ModelFactory.createDefaultModel();
@@ -15,14 +17,10 @@ public class LdesFragment {
     private LocalDateTime expirationDate;
     
     private boolean immutable = false;
-    private List<String[]> members;
+    private List<LdesMember> members = new ArrayList<>();
     private List<String> relations = new ArrayList<>();
     
     public LdesFragment() {
-    	this(null, null);
-    }
-    
-    public LdesFragment(LocalDateTime expirationDate) {
     	this(null, null);
     }
 
@@ -59,12 +57,25 @@ public class LdesFragment {
     	this.immutable = immutable;
     }
     
-    public List<String[]> getMembers() {
+    public List<LdesMember> getMembers() {
     	return members;
     }
     
-    public void setMembers(List<String[]> members) {
+    public void setMembers(List<LdesMember> members) {
     	this.members = members;
+    }
+    
+    public void addMember(LdesMember member) {
+    	members.add(member);
+    }
+    
+    public LdesMember getMember(String memberId) {
+    	for (LdesMember member : members) {
+    		if (member.getMemberId().equalsIgnoreCase(memberId)) {
+    			return member;
+    		}
+    	}
+    	throw new LdesMemberNotFoundException(memberId);
     }
     
     public List<String> getRelations() {

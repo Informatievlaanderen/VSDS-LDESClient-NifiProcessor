@@ -1,9 +1,9 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.exceptions;
 
-public class LdesException extends RuntimeException {
+public class LdesMemberNotFoundException extends LdesException {
     private static final long serialVersionUID = -9038571924019903006L;
 
-	public LdesException(String message) {
+	public LdesMemberNotFoundException(String message) {
         super(message);
     }
 }

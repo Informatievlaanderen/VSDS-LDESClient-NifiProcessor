@@ -2,12 +2,12 @@ package be.vlaanderen.informatievlaanderen.ldes.processors;
 
 import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesService;
 import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesServiceImpl;
-import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesStateManager;
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties;
 import be.vlaanderen.informatievlaanderen.ldes.processors.services.FlowManager;
 
 import org.apache.jena.riot.Lang;
+import org.apache.nifi.annotation.behavior.Stateful;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
@@ -35,7 +35,8 @@ import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProc
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
 
 @Tags({ "ldes-client, vsds" })
-@CapabilityDescription("Takes in an LDES source and passes its individual LDES members")
+@CapabilityDescription("Extracts members from an LDES source and sends to them the next processor")
+@Stateful(description="Stores mutable fragments to allow processor restart", scopes=Scope.LOCAL)
 public class LdesClient extends AbstractProcessor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LdesClient.class);
@@ -56,6 +57,14 @@ public class LdesClient extends AbstractProcessor {
 	public final List<PropertyDescriptor> getSupportedPropertyDescriptors() {
 		return List.of(DATA_SOURCE_URL, DATA_SOURCE_FORMAT, DATA_DESTINATION_FORMAT);
 	}
+	
+	private StateMap getState() throws IOException {
+		return stateManager.getState(Scope.LOCAL);
+	}
+	
+	private Map<String, String> getStateMap() throws IOException {
+		return getState().toMap();
+	}
 
 	@OnScheduled
 	public void onScheduled(final ProcessContext context) {
@@ -63,26 +72,25 @@ public class LdesClient extends AbstractProcessor {
 		dataSourceFormat = LdesProcessorProperties.getDataSourceFormat(context);
 		dataDestinationFormat = LdesProcessorProperties.getDataDestinationFormat(context);
 		
-		LOGGER.info("Starting process {} with base url {}", context.getName(), dataSourceUrl);
-		
 		ldesService = new LdesServiceImpl(dataSourceFormat);
 		
 		stateManager = context.getStateManager();
 		try {
-			final StateMap stateMap = stateManager.getState(Scope.CLUSTER);
-			
 			// There will always be at least one mutable fragment in an LDES stream.
 			// If the processor has run before, it is stored here.
 			// If the LDES stream is started for the first time, the StateManager map
 			// will be empty and we can schedule the data source URL.
-			Map<String, String> currentState = stateMap.toMap();
-			// REPLICATION
+			Map<String, String> currentState = getStateMap();
+			// FIRST SCHEDULE
 			if (currentState.isEmpty()) {
+				LOGGER.info("START: LDES extraction process {} with base url {} (expected LDES source format: {})", context.getName(), dataSourceUrl, dataSourceFormat.toLongString());
 				ldesService.queueFragment(dataSourceUrl);
 			}
-			// SYNCHRONISATION
+			// PROCESSOR RESTARTED
 			else {
-				for (String key : currentState.keySet()) {
+				Set<String> keys = currentState.keySet();
+				LOGGER.info("RESTART: LDES extraction process {} with base url {} (expected LDES source format: {}) -> queueing {} mutable fragment(s) from state", context.getName(), dataSourceUrl, dataSourceFormat.toLongString(), keys.size());
+				for (String key : keys) {
 					ldesService.queueFragment(key, LocalDateTime.parse(currentState.get(key)));
 				}
 			}
@@ -96,9 +104,9 @@ public class LdesClient extends AbstractProcessor {
 		while (ldesService.hasFragmentsToProcess()) {
 			LdesFragment fragment = ldesService.processNextFragment();
 			
-			List<String[]> members = fragment.getMembers();
-			members.forEach(ldesMember -> FlowManager.sendTriplesToRelation(session,
-					dataDestinationFormat, ldesMember, DATA_RELATIONSHIP));
+			// Send the processed members to the next Nifi processor 
+			fragment.getMembers().forEach(ldesMember -> FlowManager.sendQuadsToRelation(session,
+					dataDestinationFormat, ldesMember.getStatements(), DATA_RELATIONSHIP));
 			
 			if (!fragment.isImmutable()) {
 				storeMutableFragment(fragment);
@@ -108,12 +116,11 @@ public class LdesClient extends AbstractProcessor {
 	
 	protected void storeMutableFragment(LdesFragment fragment) {
 		try {
-			final StateMap stateMap = stateManager.getState(Scope.CLUSTER);
-			final Map<String, String> newMap = stateMap.toMap();
+			final Map<String, String> newMap = getStateMap();
 			
 			newMap.put(fragment.getFragmentId(), fragment.getExpirationDate().toString());
 			
-			stateManager.replace(stateMap, newMap, Scope.CLUSTER);
+			stateManager.replace(getState(), newMap, Scope.CLUSTER);
 		} catch (IOException e) {
 			LOGGER.error("An error occured while storing mutable fragment {} in the StateManager", fragment.getFragmentId(), e);
 		}

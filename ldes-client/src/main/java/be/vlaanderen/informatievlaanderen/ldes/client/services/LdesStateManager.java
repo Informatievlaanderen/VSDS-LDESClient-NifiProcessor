@@ -1,33 +1,32 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
 import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.MutableFragmentQueue;
 
-import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LdesStateManager {
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(LdesStateManager.class);
+	
 	protected final MutableFragmentQueue mutableFragments;
     protected final Queue<String> fragmentsToProcess;
-    /**
-     * 
-     */
-    protected final Map<String, Set<String>> processedMembers;
-    protected final List<String> processedFragments;
-    private final Clock clock;
+	protected final Map<String, Set<String>> processedMembers;
 
-    public LdesStateManager() {
-    	this(Clock.systemDefaultZone());
-    }
-
-    protected LdesStateManager(Clock clock) {
-    	this.mutableFragments = new MutableFragmentQueue();
-        this.fragmentsToProcess = new ArrayDeque<>();
-        this.processedMembers = new HashMap<>();
-        this.processedFragments = new ArrayList<>();
-        this.clock = clock;
+    protected LdesStateManager() {
+    	mutableFragments = new MutableFragmentQueue();
+        fragmentsToProcess = new ArrayDeque<>();
+		processedMembers = new HashMap<>();
     }
 
     public boolean hasFragmentsToProcess() {
@@ -47,44 +46,42 @@ public class LdesStateManager {
         	return mutableFragments.next();
         }
         
-        throw new LdesException("An error occurred while determining if there are more fragments to process.");
+        throw new LdesException("An error occurred while getting next fragment to process.");
+    }
+    
+    public void queueFragment(String fragmentId) {
+    	queueFragment(fragmentId, null);
     }
 
-    public boolean shouldProcessMember(String fragmentId, String memberId) {
-    	if (!processedMembers.containsKey(fragmentId)) {
-    		processedMembers.put(fragmentId, new HashSet<>());
+    public void queueFragment(String fragmentId, LocalDateTime expirationDate) {
+    	if (!mutableFragments.hasMutableFragment(fragmentId)) {
+    		fragmentsToProcess.add(fragmentId);
+
+    		if (!processedMembers.containsKey(fragmentId)) {
+    			processedMembers.put(fragmentId, new HashSet<>());
+    		}
+    	}
+    }
+    
+    public void processedFragment(LdesFragment fragment) {
+    	if (fragment.isImmutable()) {
+    		mutableFragments.removeMutableFragment(fragment);
+    	}
+    	else {
+    		mutableFragments.addMutableFragment(fragment);
+    		mutableFragments.addMembers(fragment, processedMembers.get(fragment.getFragmentId()));
     	}
     	
-    	return processedMembers.get(fragmentId).add(memberId);
+		fragmentsToProcess.remove(fragment.getFragmentId());
+		processedMembers.remove(fragment.getFragmentId());
     }
+	
+	public void addMember(LdesFragment fragment, String memberId) {
+		processedMembers.get(fragment.getFragmentId()).add(memberId);
+	}
 
-    public void queueFragment(String fragmentUrl, LocalDateTime expirationDate) {
-        if (!processedFragments.containsKey(fragmentUrl)) {
-            fragmentsToProcess.add(fragmentUrl);
-        }
-    }
-    
-    public void processFragment(String fragmentUrl) {
-    	processFragment(fragmentUrl, false, null);
-    }
-    
-    public void processFragment(String fragmentUrl, LocalDateTime expirationDate) {
-    	processFragment(fragmentUrl, false, expirationDate);
-    }
-
-    public void processFragment(String fragmentUrl, boolean immutable, LocalDateTime expirationDate) {
-        if (maxAge == null) {
-            this.processedFragments.put(fragmentUrl, new FragmentSettings(IMMUTABLE));
-        } else {
-            this.processedFragments.put(fragmentUrl, new FragmentSettings(LocalDateTime.now(clock).plusSeconds(maxAge)));
-        }
-    }
-
-    public void populateFragmentQueue() {
-        processedFragments.forEach((fragmentURL, fragmentSettings) -> {
-            if (fragmentSettings.getExpireDate() != null && fragmentSettings.getExpireDate().isBefore(LocalDateTime.now(clock))) {
-                fragmentsToProcess.add(fragmentURL);
-            }
-        });
-    }
+	public boolean shouldProcessMember(LdesFragment fragment, String memberId) {
+		return !(processedMembers.containsKey(fragment.getFragmentId())
+				&& processedMembers.get(fragment.getFragmentId()).contains(memberId));
+	}
 }

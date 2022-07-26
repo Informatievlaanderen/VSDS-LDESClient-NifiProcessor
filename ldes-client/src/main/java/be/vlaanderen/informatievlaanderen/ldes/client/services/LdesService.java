@@ -28,7 +28,7 @@ public interface LdesService {
 	 * Processes all queued LDES fragments.
 	 * @return a Map that contains the mutable fragment id's as keys and their expiration dates as values.
 	 */
-	Map<String, String> processStream();
+	Map<String, LocalDateTime> processStream();
 
 	/**
 	 * Checks if there are unprocessed fragments

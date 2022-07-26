@@ -1,6 +1,7 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesMember;
 
 import org.apache.jena.graph.TripleBoundary;
 import org.apache.jena.rdf.model.*;
@@ -17,138 +18,139 @@ import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesCo
 
 import java.io.StringWriter;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class LdesServiceImpl implements LdesService {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(LdesServiceImpl.class);
-	
-    protected static final Resource ANY_RESOURCE = null;
-    protected static final Property ANY_PROPERTY = null;
 
-    protected final LdesStateManager stateManager;
-    private final ModelExtract modelExtract;
-    private final LdesFragmentFetcher fragmentFetcher;
+	protected static final Resource ANY_RESOURCE = null;
+	protected static final Property ANY_PROPERTY = null;
 
-    /**
-     * Replicates and synchronizes an LDES data set.
-     * @param dataSourceUrl the base url of the data set 
-     * @param lang the data format the data set is returned in (e.g. JSONLD11, N-QUADS)
-     */
-    public LdesServiceImpl(Lang lang) {
-        stateManager = new LdesStateManager();
-        modelExtract = new ModelExtract(new StatementTripleBoundary(TripleBoundary.stopNowhere));
-        fragmentFetcher = new LdesFragmentFetcherImpl(lang);
-    }
-    
-    @Override
-    public void queueFragment(String fragmentId) {
-    	queueFragment(fragmentId, LocalDateTime.now());
-    }
-    
-    @Override
-    public void queueFragment(String fragmentId, LocalDateTime expirationDate) {
-    	stateManager.queueFragment(fragmentId, expirationDate);
-    }
-    
-    @Override
-    public boolean hasFragmentsToProcess() {
-    	return stateManager.hasFragmentsToProcess();
-    }
+	protected final LdesStateManager stateManager;
+	private final ModelExtract modelExtract;
+	private final LdesFragmentFetcher fragmentFetcher;
 
-    @Override
-    public LdesFragment processNextFragment() {
-        LdesFragment fragment = fragmentFetcher.fetchFragment(stateManager.getNextFragment());
-        
-        fragment.setMembers(extractMembers(fragment.getModel(), fragment.getFragmentId()));
-        // Queuing next pages
-        extractRelations(fragment);
+	/**
+	 * Replicates and synchronizes an LDES data set.
+	 * 
+	 * @param dataSourceUrl the base url of the data set
+	 * @param lang          the data format the data set is returned in (e.g.
+	 *                      JSONLD11, N-QUADS)
+	 */
+	public LdesServiceImpl(Lang lang) {
+		stateManager = new LdesStateManager();
+		modelExtract = new ModelExtract(new StatementTripleBoundary(TripleBoundary.stopNowhere));
+		fragmentFetcher = new LdesFragmentFetcherImpl(lang);
+	}
 
-        stateManager.processFragment(fragment.getFragmentId(), fragment.isImmutable(), fragment.getExpirationDate());
-        
-        LOGGER.info("Fetched fragment {} ({}MUTABLE) has {} member(s)", fragment.getFragmentId(), fragment.isImmutable() ? "IM" : "", fragment.getMembers().size());
-        
-        if (!fragment.isImmutable()) {
-        	
-        }
+	@Override
+	public void queueFragment(String fragmentId) {
+		queueFragment(fragmentId, null);
+	}
 
-        return fragment;
-    }
-    
-    public Map<String, String> processStream() {
-    	while (stateManager.hasFragmentsToProcess()) {
-    		LdesFragment fragment = processNextFragment();
-    	}
-    }
+	@Override
+	public void queueFragment(String fragmentId, LocalDateTime expirationDate) {
+		stateManager.queueFragment(fragmentId, expirationDate);
+	}
 
-    protected List<String[]> extractMembers(Model fragmentModel, String fragmentId) {
-        Resource subjectId = fragmentModel.listStatements(ANY_RESOURCE, W3ID_TREE_VIEW, fragmentModel.createResource(fragmentId))
-                .toList()
-                .stream()
-                .findFirst()
-                .map(Statement::getSubject)
-                .orElse(null);
+	@Override
+	public boolean hasFragmentsToProcess() {
+		return stateManager.hasFragmentsToProcess();
+	}
 
-        List<String[]> ldesMembers = new LinkedList<>();
+	@Override
+	public LdesFragment processNextFragment() {
+		LdesFragment fragment = fragmentFetcher.fetchFragment(stateManager.getNextFragment());
 
-        StmtIterator memberIterator = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE);
+		// Extract and process the members and add them to the fragment
+		extractMembers(fragment.getModel(), fragment.getFragmentId())
+				.filter(memberStatement -> stateManager.shouldProcessMember(fragment,
+						memberStatement.getObject().toString()))
+				.forEach(memberStatement -> fragment.addMember(processMember(fragment, memberStatement)));
 
-        memberIterator.forEach(statement -> {
-            String memberId = statement.getObject().toString();
-            if (stateManager.shouldProcessMember(memberId)) {
-                ldesMembers.add(processMember(statement, fragmentModel));
-            }
-        });
+		// Extract relations and add them to the fragment
+		extractRelations(fragment.getModel()).forEach(relationStatement -> fragment
+				.addRelation(relationStatement.getResource().getProperty(W3ID_TREE_NODE).getResource().toString()));
+		// Queue the related fragments
+		fragment.getRelations().forEach(fragmentId -> stateManager.queueFragment(fragmentId));
 
-        return ldesMembers;
-    }
+		// Inform the StateManager that a fragment has been processed
+		stateManager.processedFragment(fragment);
 
-    protected String[] processMember(Statement memberStatement, Model fragmentModel) {
-        Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), fragmentModel);
+		LOGGER.info("Fetched fragment {} ({}MUTABLE) has {} member(s)", fragment.getFragmentId(),
+				fragment.isImmutable() ? "IM" : "", fragment.getMembers().size());
 
-        memberModel.add(memberStatement);
+		return fragment;
+	}
 
-        // Add reverse properties
-        Set<Statement> otherLdesMembers = fragmentModel.listStatements(memberStatement.getSubject(), W3ID_TREE_MEMBER, ANY_RESOURCE)
-                .toSet()
-                .stream()
-                .filter(statement -> !memberStatement.equals(statement))
-                .collect(Collectors.toSet());
+	@Override
+	public Map<String, LocalDateTime> processStream() {
+		Map<String, LocalDateTime> fragments = new HashMap<>();
+		while (stateManager.hasFragmentsToProcess()) {
+			LdesFragment fragment = processNextFragment();
 
-        fragmentModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, memberStatement.getResource())
-                .filterKeep(statement -> statement.getSubject().isURIResource())
-                .filterDrop(memberStatement::equals)
-                .forEach(statement -> {
-                    Model reversePropertyModel = modelExtract.extract(statement.getSubject(), fragmentModel);
-                    List<Statement> otherMembers = reversePropertyModel.listStatements(statement.getSubject(), statement.getPredicate(), ANY_RESOURCE).toList();
-                    otherLdesMembers.forEach(otherLdesMember -> {
-                        reversePropertyModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, otherLdesMember.getResource()).toList();
-                    });
-                    otherMembers.forEach(otherMember -> {
-                        reversePropertyModel.remove(modelExtract.extract(otherMember.getResource(), reversePropertyModel));
-                    });
+			fragments.put(fragment.getFragmentId(), fragment.getExpirationDate());
+		}
 
-                    memberModel.add(reversePropertyModel);
-                });
+		return fragments;
+	}
 
-        StringWriter outputStream = new StringWriter();
+	protected Stream<Statement> extractMembers(Model fragmentModel, String fragmentId) {
+		Resource subjectId = fragmentModel
+				.listStatements(ANY_RESOURCE, W3ID_TREE_VIEW, fragmentModel.createResource(fragmentId)).toList()
+				.stream().findFirst().map(Statement::getSubject).orElse(null);
+		StmtIterator memberIterator = fragmentModel.listStatements(subjectId, W3ID_TREE_MEMBER, ANY_RESOURCE);
+		
+		return Stream.iterate(memberIterator, Iterator<Statement>::hasNext, UnaryOperator.identity())
+				.map(Iterator::next);
+	}
 
-        RDFDataMgr.write(outputStream, memberModel, RDFFormat.NQUADS);
+	protected LdesMember processMember(LdesFragment fragment, Statement memberStatement) {
+		Model fragmentModel = fragment.getModel();
+		Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), fragmentModel);
+		String memberId = memberStatement.getObject().toString();
+		
+		memberModel.add(memberStatement);
+		
+		// @TODO: this should not be here -> check if jena is using the titanium parser for json-ld
+		// Add reverse properties
+		Set<Statement> otherLdesMembers = fragmentModel
+				.listStatements(memberStatement.getSubject(), W3ID_TREE_MEMBER, ANY_RESOURCE).toSet().stream()
+				.filter(statement -> !memberStatement.equals(statement)).collect(Collectors.toSet());
 
-        return outputStream.toString().split("\n");
-    }
+		fragmentModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, memberStatement.getResource())
+				.filterKeep(statement -> statement.getSubject().isURIResource()).filterDrop(memberStatement::equals)
+				.forEach(statement -> {
+					Model reversePropertyModel = modelExtract.extract(statement.getSubject(), fragmentModel);
+					List<Statement> otherMembers = reversePropertyModel
+							.listStatements(statement.getSubject(), statement.getPredicate(), ANY_RESOURCE).toList();
+					otherLdesMembers.forEach(otherLdesMember -> {
+						reversePropertyModel.listStatements(ANY_RESOURCE, ANY_PROPERTY, otherLdesMember.getResource())
+								.toList();
+					});
+					otherMembers.forEach(otherMember -> {
+						reversePropertyModel
+								.remove(modelExtract.extract(otherMember.getResource(), reversePropertyModel));
+					});
 
-    protected List<String> extractRelations(LdesFragment fragment) {
-    	List<String> relations = new ArrayList<>();
-    	fragment.getModel().listStatements(ANY_RESOURCE, W3ID_TREE_RELATION, ANY_RESOURCE)
-                .forEach(relation -> fragment.addRelation(relation.getResource()
-                        .getProperty(W3ID_TREE_NODE)
-                        .getResource()
-                        .toString()));
-    }
+					memberModel.add(reversePropertyModel);
+				});
+
+		RDFDataMgr.write(new StringWriter(), memberModel, RDFFormat.NQUADS);
+
+		return new LdesMember(memberId, memberModel.toString().split("\n"));
+	}
+
+	protected Stream<Statement> extractRelations(Model fragmentModel) {
+		return Stream.iterate(fragmentModel.listStatements(ANY_RESOURCE, W3ID_TREE_RELATION, ANY_RESOURCE),
+				Iterator<Statement>::hasNext, UnaryOperator.identity()).map(Iterator::next);
+	}
 }

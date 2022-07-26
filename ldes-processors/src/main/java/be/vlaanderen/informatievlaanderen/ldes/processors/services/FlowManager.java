@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 public class FlowManager {
     
-	public static void sendTriplesToRelation(ProcessSession session, Lang lang, String[] tripples, Relationship relationship) {
+	public static void sendQuadsToRelation(ProcessSession session, Lang lang, String[] tripples, Relationship relationship) {
         FlowFile flowFile = session.create();
         flowFile = session.write(flowFile, (rawIn, rawOut) -> {
             try (PrintWriter out = new PrintWriter(rawOut)) {
