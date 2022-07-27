@@ -63,12 +63,12 @@ public class LdesServiceImpl implements LdesService {
 
 	@Override
 	public boolean hasFragmentsToProcess() {
-		return stateManager.hasFragmentsToProcess();
+		return stateManager.hasNext();
 	}
 
 	@Override
 	public LdesFragment processNextFragment() {
-		LdesFragment fragment = fragmentFetcher.fetchFragment(stateManager.getNextFragment());
+		LdesFragment fragment = fragmentFetcher.fetchFragment(stateManager.next());
 
 		// Extract and process the members and add them to the fragment
 		extractMembers(fragment.getModel(), fragment.getFragmentId())
@@ -85,8 +85,8 @@ public class LdesServiceImpl implements LdesService {
 		// Inform the StateManager that a fragment has been processed
 		stateManager.processedFragment(fragment);
 
-		LOGGER.info("Fetched fragment {} ({}MUTABLE) has {} member(s)", fragment.getFragmentId(),
-				fragment.isImmutable() ? "IM" : "", fragment.getMembers().size());
+		LOGGER.info("PROCESSED fragment {} ({}MUTABLE) has {} member(s) and {} tree:relation(s)", fragment.getFragmentId(),
+				fragment.isImmutable() ? "IM" : "", fragment.getMembers().size(), fragment.getRelations().size());
 
 		return fragment;
 	}
@@ -94,7 +94,7 @@ public class LdesServiceImpl implements LdesService {
 	@Override
 	public Map<String, LocalDateTime> processStream() {
 		Map<String, LocalDateTime> fragments = new HashMap<>();
-		while (stateManager.hasFragmentsToProcess()) {
+		while (stateManager.hasNext()) {
 			LdesFragment fragment = processNextFragment();
 
 			fragments.put(fragment.getFragmentId(), fragment.getExpirationDate());
@@ -145,6 +145,8 @@ public class LdesServiceImpl implements LdesService {
 				});
 
 		RDFDataMgr.write(new StringWriter(), memberModel, RDFFormat.NQUADS);
+		
+		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
 
 		return new LdesMember(memberId, memberModel.toString().split("\n"));
 	}

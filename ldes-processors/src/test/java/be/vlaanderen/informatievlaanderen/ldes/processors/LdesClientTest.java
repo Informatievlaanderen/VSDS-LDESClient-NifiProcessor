@@ -12,7 +12,7 @@ import java.util.List;
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@WireMockTest(httpPort = 8089)
+@WireMockTest(httpPort = 9090)
 class LdesClientTest {
 
     private TestRunner testRunner;
