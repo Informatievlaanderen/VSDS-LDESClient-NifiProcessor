@@ -1,5 +1,6 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.LdesStateManager;
 import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
 
 import org.junit.jupiter.api.Assertions;

@@ -13,6 +13,10 @@
     <packaging>nar</packaging>
 
     <properties>
+        <!-- Java Properties -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
         <nifi-api.version>1.16.0</nifi-api.version>
         <nifi-utils.version>1.16.2</nifi-utils.version>
         <nifi-mock.version>1.16.2</nifi-mock.version>

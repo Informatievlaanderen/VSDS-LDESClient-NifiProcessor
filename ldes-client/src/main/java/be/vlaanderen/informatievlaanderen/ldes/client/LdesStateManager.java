@@ -1,7 +1,4 @@
-package be.vlaanderen.informatievlaanderen.ldes.client.services;
-
-import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
-import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
+package be.vlaanderen.informatievlaanderen.ldes.client;
 
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
@@ -12,28 +9,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import be.vlaanderen.informatievlaanderen.ldes.client.exceptions.LdesException;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 
 public class LdesStateManager {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(LdesStateManager.class);
 	
     protected final Queue<String> fragmentsToProcess;
-    
-    protected final Map<String, LocalDateTime> processedMutableFragments;
+
     protected final List<String> processedImmutableFragments;
+    protected final Map<String, LocalDateTime> processedMutableFragments;
     /**
      * A map of key-value pairs with the fragment id as key.
      */
 	protected final Map<String, Set<String>> processedMutableFragmentMembers;
 
-    protected LdesStateManager() {
+    public LdesStateManager() {
         fragmentsToProcess = new ArrayDeque<>();
         
-        processedMutableFragments = new HashMap<>();
         processedImmutableFragments = new ArrayList<>();
+        processedMutableFragments = new HashMap<>();
 		processedMutableFragmentMembers = new HashMap<>();
     }
 
@@ -132,17 +133,15 @@ public class LdesStateManager {
     public void processedFragment(LdesFragment fragment) {
     	if (fragment.isImmutable()) {
     		processedImmutableFragments.add(fragment.getFragmentId());
+    		processedMutableFragments.remove(fragment.getFragmentId());
     		processedMutableFragmentMembers.remove(fragment.getFragmentId());
     	}
     	else {
     		processedMutableFragments.put(fragment.getFragmentId(), fragment.getExpirationDate());
+    		processedMutableFragmentMembers.put(fragment.getFragmentId(), fragment.getMembers().stream().map(member -> member.getMemberId()).collect(Collectors.toSet()));
     	}
 		fragmentsToProcess.remove(fragment.getFragmentId());
     }
-	
-	public void addMember(LdesFragment fragment, String memberId) {
-		processedMutableFragmentMembers.get(fragment.getFragmentId()).add(memberId);
-	}
 
 	public boolean shouldProcessMember(LdesFragment fragment, String memberId) {
 		return !(processedMutableFragmentMembers.containsKey(fragment.getFragmentId())
