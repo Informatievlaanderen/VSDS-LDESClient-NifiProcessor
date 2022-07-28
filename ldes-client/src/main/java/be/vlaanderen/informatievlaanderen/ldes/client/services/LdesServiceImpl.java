@@ -30,6 +30,7 @@ import org.apache.jena.riot.RDFLanguages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.LdesClientImplFactory;
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesMember;
 
@@ -60,8 +61,8 @@ public class LdesServiceImpl implements LdesService {
 		this(RDFLanguages.nameToLang(DEFAULT_DATA_SOURCE_FORMAT), RDFLanguages.nameToLang(DEFAULT_DATA_DESTINATION_FORMAT));
 	}
 	
-	public LdesServiceImpl(Lang dataSourceFormat) {
-		this (dataSourceFormat, dataSourceFormat);
+	public LdesServiceImpl(Lang dataFormat) {
+		this (dataFormat, dataFormat);
 	}
 
 	/**
@@ -76,7 +77,7 @@ public class LdesServiceImpl implements LdesService {
 		
 		stateManager = new LdesStateManager();
 		modelExtract = new ModelExtract(new StatementTripleBoundary(TripleBoundary.stopNowhere));
-		fragmentFetcher = new LdesFragmentFetcherImpl(dataSourceFormat);
+		fragmentFetcher = LdesClientImplFactory.getFragmentFetcher(dataSourceFormat);
 	}
 
 	@Override
@@ -172,11 +173,13 @@ public class LdesServiceImpl implements LdesService {
 					memberModel.add(reversePropertyModel);
 				});
 
-		RDFDataMgr.write(new StringWriter(), memberModel, dataDestinationFormat);
+		StringWriter outputStream = new StringWriter();
+		
+		RDFDataMgr.write(outputStream, memberModel, dataDestinationFormat);
 
 		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
 		
-		return new LdesMember(memberId, memberModel.toString().split("\n"));
+		return new LdesMember(memberId, outputStream.toString());
 	}
 
 	protected Stream<Statement> extractRelations(Model fragmentModel) {

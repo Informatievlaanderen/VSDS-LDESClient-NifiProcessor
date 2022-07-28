@@ -8,22 +8,20 @@ import org.apache.nifi.processor.Relationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
-import java.util.Arrays;
-
 public class FlowManager {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(FlowManager.class);
 	
 	private static int counter = 0;
     
-	public static void sendRDFToRelation(ProcessSession session, Lang lang, String[] tripples, Relationship relationship) {
+	public static void sendRDFToRelation(ProcessSession session, Lang lang, String rdf, Relationship relationship) {
         FlowFile flowFile = session.create();
-        flowFile = session.write(flowFile, (rawIn, rawOut) -> {
-            try (PrintWriter out = new PrintWriter(rawOut)) {
-                Arrays.stream(tripples).forEach(out::println);
-            }
-        });
+//        flowFile = session.write(flowFile, (rawIn, rawOut) -> {
+//            try (PrintWriter out = new PrintWriter(rawOut)) {
+//                Arrays.stream(rdf).forEach(out::println);
+//            }
+//        });
+        flowFile = session.write(flowFile, out -> out.write(rdf.getBytes()));
 
         flowFile = session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), lang.getContentType().toHeaderString());
         session.transfer(flowFile, relationship);

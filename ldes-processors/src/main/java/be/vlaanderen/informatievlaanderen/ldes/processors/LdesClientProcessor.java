@@ -1,10 +1,15 @@
 package be.vlaanderen.informatievlaanderen.ldes.processors;
 
-import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesService;
-import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesServiceImpl;
-import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
-import be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties;
-import be.vlaanderen.informatievlaanderen.ldes.processors.services.FlowManager;
+import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_DESTINATION_FORMAT;
+import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_SOURCE_FORMAT;
+import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_SOURCE_URL;
+import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.jena.riot.Lang;
 import org.apache.nifi.annotation.behavior.Stateful;
@@ -23,23 +28,18 @@ import org.apache.nifi.processor.exception.ProcessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_SOURCE_URL;
-import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_DESTINATION_FORMAT;
-import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_SOURCE_FORMAT;
-import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorRelationships.DATA_RELATIONSHIP;
+import be.vlaanderen.informatievlaanderen.ldes.client.LdesClientImplFactory;
+import be.vlaanderen.informatievlaanderen.ldes.client.services.LdesService;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
+import be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties;
+import be.vlaanderen.informatievlaanderen.ldes.processors.services.FlowManager;
 
 @Tags({ "ldes-client, vsds" })
 @CapabilityDescription("Extracts members from an LDES source and sends to them the next processor")
 @Stateful(description="Stores mutable fragments to allow processor restart", scopes=Scope.LOCAL)
-public class LdesClient extends AbstractProcessor {
+public class LdesClientProcessor extends AbstractProcessor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LdesClient.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(LdesClientProcessor.class);
 
 	private LdesService ldesService;
 	private StateManager stateManager;
@@ -72,7 +72,7 @@ public class LdesClient extends AbstractProcessor {
 		dataSourceFormat = LdesProcessorProperties.getDataSourceFormat(context);
 		dataDestinationFormat = LdesProcessorProperties.getDataDestinationFormat(context);
 
-		ldesService = new LdesServiceImpl(dataSourceFormat, dataDestinationFormat);
+		ldesService = LdesClientImplFactory.getLdesService(dataSourceFormat, dataDestinationFormat);
 
 		stateManager = context.getStateManager();
 		try {
@@ -106,7 +106,7 @@ public class LdesClient extends AbstractProcessor {
 
 			// Send the processed members to the next Nifi processor 
 			fragment.getMembers().forEach(ldesMember -> FlowManager.sendRDFToRelation(session,
-					dataDestinationFormat, ldesMember.getStatements(), DATA_RELATIONSHIP));
+					dataDestinationFormat, ldesMember.getStatement(), DATA_RELATIONSHIP));
 
 			if (!fragment.isImmutable()) {
 				storeMutableFragment(fragment);

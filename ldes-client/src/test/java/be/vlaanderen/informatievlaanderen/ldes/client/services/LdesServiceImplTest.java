@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.LdesClientImplFactory;
+
 @WireMockTest(httpPort = 10101)
 class LdesServiceImplTest {
 
@@ -15,11 +17,11 @@ class LdesServiceImplTest {
 	private final String oneMemberFragmentUrl = "http://localhost:10101/exampleData?generatedAtTime=2022-05-05T00:00:00.000Z";
 	private final String oneMemberUrl = "http://localhost:10101/member?generatedAtTime=2022-05-05T00:00:00.000Z";
 
-	private LdesServiceImpl ldesService;
+	private LdesService ldesService;
 
 	@BeforeEach
 	void setup() {
-		ldesService = new LdesServiceImpl(Lang.JSONLD11);
+		ldesService = LdesClientImplFactory.getLdesService(Lang.JSONLD11);
 
 		ldesService.queueFragment(initialFragmentUrl);
 	}
