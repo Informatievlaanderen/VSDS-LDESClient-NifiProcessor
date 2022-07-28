@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.jena.riot.Lang;
@@ -36,7 +37,7 @@ import be.vlaanderen.informatievlaanderen.ldes.processors.services.FlowManager;
 
 @Tags({ "ldes-client, vsds" })
 @CapabilityDescription("Extracts members from an LDES source and sends to them the next processor")
-@Stateful(description="Stores mutable fragments to allow processor restart", scopes=Scope.LOCAL)
+@Stateful(description = "Stores mutable fragments to allow processor restart", scopes = Scope.LOCAL)
 public class LdesClientProcessor extends AbstractProcessor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LdesClientProcessor.class);
@@ -83,13 +84,16 @@ public class LdesClientProcessor extends AbstractProcessor {
 			Map<String, String> currentState = getStateMap();
 			// FIRST SCHEDULE
 			if (currentState.isEmpty()) {
-				LOGGER.info("START: LDES extraction processor {} with base url {} (expected LDES source format: {})", context.getName(), dataSourceUrl, dataSourceFormat.toString());
+				LOGGER.info("START: LDES extraction processor {} with base url {} (expected LDES source format: {})",
+						context.getName(), dataSourceUrl, dataSourceFormat.toString());
 				ldesService.queueFragment(dataSourceUrl);
 			}
 			// PROCESSOR RESTARTED
 			else {
 				Set<String> keys = currentState.keySet();
-				LOGGER.info("RESTART: LDES extraction processor {} with base url {} (expected LDES source format: {}) -> queueing {} mutable fragment(s) from state", context.getName(), dataSourceUrl, dataSourceFormat.toString(), keys.size());
+				LOGGER.info(
+						"RESTART: LDES extraction processor {} with base url {} (expected LDES source format: {}) -> queueing {} mutable fragment(s) from state",
+						context.getName(), dataSourceUrl, dataSourceFormat.toString(), keys.size());
 				for (String key : keys) {
 					ldesService.queueFragment(key, LocalDateTime.parse(currentState.get(key)));
 				}
@@ -104,9 +108,9 @@ public class LdesClientProcessor extends AbstractProcessor {
 		if (ldesService.hasFragmentsToProcess()) {
 			LdesFragment fragment = ldesService.processNextFragment();
 
-			// Send the processed members to the next Nifi processor 
-			fragment.getMembers().forEach(ldesMember -> FlowManager.sendRDFToRelation(session,
-					dataDestinationFormat, ldesMember.getStatement(), DATA_RELATIONSHIP));
+			// Send the processed members to the next Nifi processor
+			fragment.getMembers().forEach(ldesMember -> FlowManager.sendRDFToRelation(session, dataDestinationFormat,
+					ldesMember.getMemberData(), DATA_RELATIONSHIP));
 
 			if (!fragment.isImmutable()) {
 				storeMutableFragment(fragment);
@@ -117,12 +121,15 @@ public class LdesClientProcessor extends AbstractProcessor {
 	protected void storeMutableFragment(LdesFragment fragment) {
 		try {
 			final Map<String, String> newMap = getStateMap();
+			String expirationDateString = Optional.ofNullable(fragment.getExpirationDate()).map(LocalDateTime::toString)
+					.orElse(null);
 
-			newMap.put(fragment.getFragmentId(), fragment.getExpirationDate().toString());
+			newMap.put(fragment.getFragmentId(), expirationDateString);
 
 			stateManager.replace(getState(), newMap, Scope.CLUSTER);
 		} catch (IOException e) {
-			LOGGER.error("An error occured while storing mutable fragment {} in the StateManager", fragment.getFragmentId(), e);
+			LOGGER.error("An error occured while storing mutable fragment {} in the StateManager",
+					fragment.getFragmentId(), e);
 		}
 	}
 }

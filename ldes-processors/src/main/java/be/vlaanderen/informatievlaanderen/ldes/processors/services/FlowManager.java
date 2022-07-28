@@ -14,16 +14,12 @@ public class FlowManager {
 	
 	private static int counter = 0;
     
-	public static void sendRDFToRelation(ProcessSession session, Lang lang, String rdf, Relationship relationship) {
+	public static void sendRDFToRelation(ProcessSession session, Lang lang, String memberData, Relationship relationship) {
         FlowFile flowFile = session.create();
-//        flowFile = session.write(flowFile, (rawIn, rawOut) -> {
-//            try (PrintWriter out = new PrintWriter(rawOut)) {
-//                Arrays.stream(rdf).forEach(out::println);
-//            }
-//        });
-        flowFile = session.write(flowFile, out -> out.write(rdf.getBytes()));
-
+        
+        flowFile = session.write(flowFile, out -> out.write(memberData.getBytes()));
         flowFile = session.putAttribute(flowFile, CoreAttributes.MIME_TYPE.key(), lang.getContentType().toHeaderString());
+        
         session.transfer(flowFile, relationship);
         
         counter++;

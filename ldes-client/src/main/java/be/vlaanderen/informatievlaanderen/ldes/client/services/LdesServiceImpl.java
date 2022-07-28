@@ -79,7 +79,7 @@ public class LdesServiceImpl implements LdesService {
 		modelExtract = new ModelExtract(new StatementTripleBoundary(TripleBoundary.stopNowhere));
 		fragmentFetcher = LdesClientImplFactory.getFragmentFetcher(dataSourceFormat);
 	}
-
+	
 	@Override
 	public void queueFragment(String fragmentId) {
 		queueFragment(fragmentId, null);
@@ -173,13 +173,12 @@ public class LdesServiceImpl implements LdesService {
 					memberModel.add(reversePropertyModel);
 				});
 
-		StringWriter outputStream = new StringWriter();
-		
-		RDFDataMgr.write(outputStream, memberModel, dataDestinationFormat);
+		StringWriter output = new StringWriter();
+		RDFDataMgr.write(output, memberModel, dataDestinationFormat);
 
 		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
-		
-		return new LdesMember(memberId, outputStream.toString());
+
+		return new LdesMember(memberId, output.toString());
 	}
 
 	protected Stream<Statement> extractRelations(Model fragmentModel) {
