@@ -17,11 +17,11 @@ public class FlowManager {
 	
 	private static int counter = 0;
     
-	public static void sendRDFToRelation(ProcessSession session, Lang lang, String[] tripples, Relationship relationship) {
+	public static void sendRDFToRelation(ProcessSession session, Lang lang, String memberData, Relationship relationship) {
         FlowFile flowFile = session.create();
         flowFile = session.write(flowFile, (rawIn, rawOut) -> {
             try (PrintWriter out = new PrintWriter(rawOut)) {
-                Arrays.stream(tripples).forEach(out::println);
+                out.println(memberData);
             }
         });
 

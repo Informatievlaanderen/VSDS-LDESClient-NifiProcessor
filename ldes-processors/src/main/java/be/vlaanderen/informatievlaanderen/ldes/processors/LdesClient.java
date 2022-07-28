@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static be.vlaanderen.informatievlaanderen.ldes.processors.config.LdesProcessorProperties.DATA_SOURCE_URL;
@@ -106,7 +107,7 @@ public class LdesClient extends AbstractProcessor {
 
 			// Send the processed members to the next Nifi processor 
 			fragment.getMembers().forEach(ldesMember -> FlowManager.sendRDFToRelation(session,
-					dataDestinationFormat, ldesMember.getStatements(), DATA_RELATIONSHIP));
+					dataDestinationFormat, ldesMember.getMemberData(), DATA_RELATIONSHIP));
 
 			if (!fragment.isImmutable()) {
 				storeMutableFragment(fragment);
@@ -117,8 +118,9 @@ public class LdesClient extends AbstractProcessor {
 	protected void storeMutableFragment(LdesFragment fragment) {
 		try {
 			final Map<String, String> newMap = getStateMap();
+			String expirationDateString = Optional.ofNullable(fragment.getExpirationDate()).map(LocalDateTime::toString).orElse(null);
 
-			newMap.put(fragment.getFragmentId(), fragment.getExpirationDate().toString());
+			newMap.put(fragment.getFragmentId(), expirationDateString);
 
 			stateManager.replace(getState(), newMap, Scope.CLUSTER);
 		} catch (IOException e) {

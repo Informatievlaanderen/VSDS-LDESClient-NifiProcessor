@@ -172,11 +172,12 @@ public class LdesServiceImpl implements LdesService {
 					memberModel.add(reversePropertyModel);
 				});
 
-		RDFDataMgr.write(new StringWriter(), memberModel, dataDestinationFormat);
+		StringWriter output = new StringWriter();
+		RDFDataMgr.write(output, memberModel, dataDestinationFormat);
 
 		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
-		
-		return new LdesMember(memberId, memberModel.toString().split("\n"));
+
+		return new LdesMember(memberId, output.toString());
 	}
 
 	protected Stream<Statement> extractRelations(Model fragmentModel) {

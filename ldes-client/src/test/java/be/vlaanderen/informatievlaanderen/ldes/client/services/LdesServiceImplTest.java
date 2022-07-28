@@ -1,12 +1,19 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFParser;
+import org.apache.jena.riot.RDFParserBuilder;
 import org.junit.jupiter.api.BeforeEach;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import org.junit.jupiter.api.Test;
+
+import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_NODE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WireMockTest(httpPort = 10101)
 class LdesServiceImplTest {
@@ -24,44 +31,44 @@ class LdesServiceImplTest {
 		ldesService.queueFragment(initialFragmentUrl);
 	}
 
-//	@Test
-//	void when_processRelations_expectFragmentQueueToBeUpdated() {
-//		assertEquals(1, ldesService.stateManager.fragmentsToProcess.size());
-//
-//		ldesService.extractRelations(getInputModelFromUrl(initialFragmentUrl))
-//				.forEach(relationStatement -> ldesService.stateManager.queueFragment(
-//						relationStatement.getResource().getProperty(W3ID_TREE_NODE).getResource().toString()));
-//
-//		assertEquals(2, ldesService.stateManager.fragmentsToProcess.size());
-//	}
+	@Test
+	void when_processRelations_expectFragmentQueueToBeUpdated() {
+		assertEquals(1, ldesService.stateManager.fragmentsToProcess.size());
 
-//	@Test
-//	void when_ProcessNextFragmentWith2Fragments_expect2MembersPerFragment() {
-//		LdesFragment fragment;
-//
-//		fragment = ldesService.processNextFragment();
-//		assertEquals(2, fragment.getMembers().size());
-//
-//		fragment = ldesService.processNextFragment();
-//		assertEquals(2, fragment.getMembers().size());
-//	}
+		ldesService.extractRelations(getInputModelFromUrl(initialFragmentUrl))
+				.forEach(relationStatement -> ldesService.stateManager.queueFragment(
+						relationStatement.getResource().getProperty(W3ID_TREE_NODE).getResource().toString()));
 
-//	@Test
-//	void when_ProcessNextFragment_expectValidLdesMember() {
-//		ldesService = new LdesServiceImpl(Lang.JSONLD11);
-//		ldesService.queueFragment(oneMemberFragmentUrl);
-//
-//		LdesFragment fragment = ldesService.processNextFragment();
-//
-//		assertEquals(1, fragment.getMembers().size());
-//
-//		String output = String.join("\n", fragment.getMembers().get(0).getStatements());
-//
-//		Model outputModel = RDFParserBuilder.create().fromString(output).lang(Lang.NQUADS).toModel();
-//		Model validateModel = getInputModelFromUrl(oneMemberUrl);
-//
-//		assertTrue(outputModel.isIsomorphicWith(validateModel));
-//	}
+		assertEquals(2, ldesService.stateManager.fragmentsToProcess.size());
+	}
+
+	@Test
+	void when_ProcessNextFragmentWith2Fragments_expect2MembersPerFragment() {
+		LdesFragment fragment;
+
+		fragment = ldesService.processNextFragment();
+		assertEquals(2, fragment.getMembers().size());
+
+		fragment = ldesService.processNextFragment();
+		assertEquals(2, fragment.getMembers().size());
+	}
+
+	@Test
+	void when_ProcessNextFragment_expectValidLdesMember() {
+		ldesService = new LdesServiceImpl(Lang.JSONLD11, Lang.NQUADS);
+		ldesService.queueFragment(oneMemberFragmentUrl);
+
+		LdesFragment fragment = ldesService.processNextFragment();
+
+		assertEquals(1, fragment.getMembers().size());
+
+		String output = fragment.getMembers().get(0).getMemberData();
+
+		Model outputModel = RDFParserBuilder.create().fromString(output).lang(Lang.NQUADS).toModel();
+		Model validateModel = getInputModelFromUrl(oneMemberUrl);
+
+		assertTrue(outputModel.isIsomorphicWith(validateModel));
+	}
 
 	private Model getInputModelFromUrl(String fragmentUrl) {
 		Model inputModel = ModelFactory.createDefaultModel();

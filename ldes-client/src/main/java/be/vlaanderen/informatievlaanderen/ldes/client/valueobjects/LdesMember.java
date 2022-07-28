@@ -3,18 +3,18 @@ package be.vlaanderen.informatievlaanderen.ldes.client.valueobjects;
 public class LdesMember {
 	
 	private final String memberId;
-	private final String[] statements;
+	private final String memberData;
 	
-	public LdesMember(final String memberId, final String[] statements) {
+	public LdesMember(final String memberId, final String memberData) {
 		this.memberId = memberId;
-		this.statements = statements;
+		this.memberData = memberData;
 	}
 	
 	public String getMemberId() {
 		return memberId;
 	}
 	
-	public String[] getStatements() {
-		return statements;
+	public String getMemberData() {
+		return memberData;
 	}
 }
