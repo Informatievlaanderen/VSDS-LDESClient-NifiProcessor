@@ -1,17 +1,12 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-
-import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
-
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.riot.*;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFParser;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
-import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_NODE;
-import static org.junit.jupiter.api.Assertions.*;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
 @WireMockTest(httpPort = 10101)
 class LdesServiceImplTest {
@@ -39,7 +34,7 @@ class LdesServiceImplTest {
 //
 //		assertEquals(2, ldesService.stateManager.fragmentsToProcess.size());
 //	}
-//
+
 //	@Test
 //	void when_ProcessNextFragmentWith2Fragments_expect2MembersPerFragment() {
 //		LdesFragment fragment;

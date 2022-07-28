@@ -72,7 +72,7 @@ public class LdesClient extends AbstractProcessor {
 		dataSourceFormat = LdesProcessorProperties.getDataSourceFormat(context);
 		dataDestinationFormat = LdesProcessorProperties.getDataDestinationFormat(context);
 
-		ldesService = new LdesServiceImpl(dataSourceFormat);
+		ldesService = new LdesServiceImpl(dataSourceFormat, dataDestinationFormat);
 
 		stateManager = context.getStateManager();
 		try {
@@ -105,7 +105,7 @@ public class LdesClient extends AbstractProcessor {
 			LdesFragment fragment = ldesService.processNextFragment();
 
 			// Send the processed members to the next Nifi processor 
-			fragment.getMembers().forEach(ldesMember -> FlowManager.sendQuadsToRelation(session,
+			fragment.getMembers().forEach(ldesMember -> FlowManager.sendRDFToRelation(session,
 					dataDestinationFormat, ldesMember.getStatements(), DATA_RELATIONSHIP));
 
 			if (!fragment.isImmutable()) {

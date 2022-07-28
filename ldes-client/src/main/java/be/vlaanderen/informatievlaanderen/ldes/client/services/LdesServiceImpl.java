@@ -1,16 +1,5 @@
 package be.vlaanderen.informatievlaanderen.ldes.client.services;
 
-import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
-import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesMember;
-
-import org.apache.jena.graph.TripleBoundary;
-import org.apache.jena.rdf.model.*;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_MEMBER;
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_NODE;
 import static be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesConstants.W3ID_TREE_RELATION;
@@ -27,12 +16,34 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.jena.graph.TripleBoundary;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelExtract;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StatementTripleBoundary;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFLanguages;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesFragment;
+import be.vlaanderen.informatievlaanderen.ldes.client.valueobjects.LdesMember;
+
 public class LdesServiceImpl implements LdesService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LdesServiceImpl.class);
+	
+	public static final String DEFAULT_DATA_SOURCE_FORMAT = "json-ld";
+	public static final String DEFAULT_DATA_DESTINATION_FORMAT = "quads";
 
 	protected static final Resource ANY_RESOURCE = null;
 	protected static final Property ANY_PROPERTY = null;
+	
+	private final Lang dataDestinationFormat;
 
 	protected final LdesStateManager stateManager;
 	private final ModelExtract modelExtract;
@@ -45,10 +56,27 @@ public class LdesServiceImpl implements LdesService {
 	 * @param lang          the data format the data set is returned in (e.g.
 	 *                      JSONLD11, N-QUADS)
 	 */
-	public LdesServiceImpl(Lang lang) {
+	public LdesServiceImpl() {
+		this(RDFLanguages.nameToLang(DEFAULT_DATA_SOURCE_FORMAT), RDFLanguages.nameToLang(DEFAULT_DATA_DESTINATION_FORMAT));
+	}
+	
+	public LdesServiceImpl(Lang dataSourceFormat) {
+		this (dataSourceFormat, dataSourceFormat);
+	}
+
+	/**
+	 * Replicates and synchronizes an LDES data set.
+	 * 
+	 * @param dataSourceUrl the base url of the data set
+	 * @param dataSourceFormat          the expected data format of the data source (e.g. JSONLD11, N-QUADS)
+	 * @param dataDestinationFormat		the desired data format for the extracted and processed data (e.g. JSONLD11, N-QUADS)
+	 */
+	public LdesServiceImpl(Lang dataSourceFormat, Lang dataDestinationFormat) {
+		this.dataDestinationFormat = dataDestinationFormat;
+		
 		stateManager = new LdesStateManager();
 		modelExtract = new ModelExtract(new StatementTripleBoundary(TripleBoundary.stopNowhere));
-		fragmentFetcher = new LdesFragmentFetcherImpl(lang);
+		fragmentFetcher = new LdesFragmentFetcherImpl(dataSourceFormat);
 	}
 
 	@Override
@@ -117,9 +145,9 @@ public class LdesServiceImpl implements LdesService {
 		Model fragmentModel = fragment.getModel();
 		Model memberModel = modelExtract.extract(memberStatement.getObject().asResource(), fragmentModel);
 		String memberId = memberStatement.getObject().toString();
-		
+
 		memberModel.add(memberStatement);
-		
+
 		// @TODO: this should not be here -> check if jena is using the titanium parser for json-ld
 		// Add reverse properties
 		Set<Statement> otherLdesMembers = fragmentModel
@@ -144,10 +172,10 @@ public class LdesServiceImpl implements LdesService {
 					memberModel.add(reversePropertyModel);
 				});
 
-		RDFDataMgr.write(new StringWriter(), memberModel, RDFFormat.NQUADS);
-		
-		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
+		RDFDataMgr.write(new StringWriter(), memberModel, dataDestinationFormat);
 
+		LOGGER.info("PROCESSED LDES member ({}) on fragment {}", memberId, fragment.getFragmentId());
+		
 		return new LdesMember(memberId, memberModel.toString().split("\n"));
 	}
 

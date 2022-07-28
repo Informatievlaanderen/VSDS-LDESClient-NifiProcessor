@@ -24,14 +24,17 @@ public class LdesStateManager {
     
     protected final Map<String, LocalDateTime> processedMutableFragments;
     protected final List<String> processedImmutableFragments;
-	protected final Map<String, Set<String>> processedMembers;
+    /**
+     * A map of key-value pairs with the fragment id as key.
+     */
+	protected final Map<String, Set<String>> processedMutableFragmentMembers;
 
     protected LdesStateManager() {
         fragmentsToProcess = new ArrayDeque<>();
         
         processedMutableFragments = new HashMap<>();
         processedImmutableFragments = new ArrayList<>();
-		processedMembers = new HashMap<>();
+		processedMutableFragmentMembers = new HashMap<>();
     }
 
 	public boolean hasNext() {
@@ -118,7 +121,7 @@ public class LdesStateManager {
 
     	if (!processedMutableFragments.containsKey(fragmentId)) {	
     		fragmentsToProcess.add(fragmentId);
-    		processedMembers.put(fragmentId, new HashSet<>());
+    		processedMutableFragmentMembers.put(fragmentId, new HashSet<>());
         	LOGGER.info("QUEUE: Queued fragment {}", fragmentId);
         	return true;
     	}
@@ -129,18 +132,20 @@ public class LdesStateManager {
     public void processedFragment(LdesFragment fragment) {
     	if (fragment.isImmutable()) {
     		processedImmutableFragments.add(fragment.getFragmentId());
-    		
-    		fragmentsToProcess.remove(fragment.getFragmentId());
-    		processedMembers.remove(fragment.getFragmentId());
+    		processedMutableFragmentMembers.remove(fragment.getFragmentId());
     	}
+    	else {
+    		processedMutableFragments.put(fragment.getFragmentId(), fragment.getExpirationDate());
+    	}
+		fragmentsToProcess.remove(fragment.getFragmentId());
     }
 	
 	public void addMember(LdesFragment fragment, String memberId) {
-		processedMembers.get(fragment.getFragmentId()).add(memberId);
+		processedMutableFragmentMembers.get(fragment.getFragmentId()).add(memberId);
 	}
 
 	public boolean shouldProcessMember(LdesFragment fragment, String memberId) {
-		return !(processedMembers.containsKey(fragment.getFragmentId())
-				&& processedMembers.get(fragment.getFragmentId()).contains(memberId));
+		return !(processedMutableFragmentMembers.containsKey(fragment.getFragmentId())
+				&& processedMutableFragmentMembers.get(fragment.getFragmentId()).contains(memberId));
 	}
 }
